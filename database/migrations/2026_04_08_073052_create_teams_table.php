@@ -8,19 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('students', function (Blueprint $table) {
+        Schema::create('teams', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('users_id')
+            $table->string('name', 50);
+
+            $table->foreignId('leader_user_id')
                 ->constrained('users')
                 ->onDelete('cascade');
 
-            $table->string('faculty', 50);
-            $table->string('department', 50);
-            $table->string('study_program', 50);
-            $table->string('year_of_study', 10);
-
-            $table->boolean('is_ukf_verified')->default(false);
+            $table->enum('status', ['active', 'inactive', 'archived'])
+                ->default('active');
 
             $table->timestamps();
         });
@@ -28,6 +26,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('students');
+        Schema::dropIfExists('teams');
     }
 };
