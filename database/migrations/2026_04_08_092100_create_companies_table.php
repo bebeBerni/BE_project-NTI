@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('company_name', 255);
             $table->string('ico', 45);
             $table->longText('description');
-            $table->string('website', 45);
+            $table->string('website', 255)->nullable();
             $table->string('address', 45);
             $table->timestamps();
         });
