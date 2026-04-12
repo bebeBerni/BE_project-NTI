@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
@@ -14,16 +16,16 @@ class Project extends Model
         'description',
         'type',
         'created_by_user_id',
-        'company_id',
-        'team_id',
+        'companies_id',
+        'teams_id',
         'budget',
         'status',
         'deadline',
     ];
 
     protected $casts = [
+        'budget' => 'decimal:2',
         'deadline' => 'datetime',
-        'budget' => 'float',
     ];
 
     /*
@@ -32,17 +34,17 @@ class Project extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
-    public function company()
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
     }
 
-    public function team()
+    public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
     }
@@ -53,22 +55,22 @@ class Project extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function assignments()
+    public function assignments(): HasMany
     {
         return $this->hasMany(ProjectAssignment::class);
     }
 
     public function applications()
     {
-        return $this->hasMany(ProjectApplication::class);
+        return $this->hasMany(ProjectApplication::class, 'projects_id');
     }
 
-    public function decisions()
+    public function decisions(): HasMany
     {
-        return $this->hasMany(Decision::class);
+        return $this->hasMany(Decision::class, "projects_id");
     }
 
-    public function history()
+    public function history(): HasMany
     {
         return $this->hasMany(ProjectHistory::class);
     }
