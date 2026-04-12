@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('users_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('companies_id')->constrained('companies')->onDelete('cascade');
             $table->string('role_in_company', 45);
+            $table->unique(['users_id', 'companies_id']);
         });
     }
 
