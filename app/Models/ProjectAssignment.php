@@ -12,8 +12,8 @@ class ProjectAssignment extends Model
     protected $table = 'project_assignments';
 
     protected $fillable = [
-        'projects_id',
-        'teams_id',
+        'project_id',
+        'team_id',
         'assigned_at',
         'status',
     ];

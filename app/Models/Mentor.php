@@ -10,7 +10,7 @@ class Mentor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'users_id',
+        'user_id',
         'specialization',
         'bio',
     ];

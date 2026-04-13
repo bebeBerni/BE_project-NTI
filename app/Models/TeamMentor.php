@@ -12,8 +12,8 @@ class TeamMentor extends Model
     protected $table = 'team_mentors';
 
     protected $fillable = [
-        'teams_id',
-        'mentors_id',
+        'team_id',
+        'mentor_id',
         'assigned_at',
         'active',
     ];
