@@ -34,7 +34,7 @@ class Team extends Model
 
     public function teamMentors()
     {
-        return $this->hasMany(TeamMentor::class,);
+        return $this->hasMany(TeamMentor::class);
     }
 
     public function mentors()

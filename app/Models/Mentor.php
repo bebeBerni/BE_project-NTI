@@ -22,12 +22,12 @@ class Mentor extends Model
 
     public function teamMentors()
     {
-        return $this->hasMany(TeamMentor::class, 'mentors_id');
+        return $this->hasMany(TeamMentor::class);
     }
 
     public function teams()
     {
-        return $this->belongsToMany(Team::class, 'team_mentors', 'mentors_id', 'teams_id')
+        return $this->belongsToMany(Team::class, 'team_mentors', 'mentor_id', 'team_id')
             ->withPivot('assigned_at', 'active')
             ->withTimestamps();
     }
