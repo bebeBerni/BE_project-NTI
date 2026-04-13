@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('company_members', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('users_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('companies_id')->constrained('companies')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('role_in_company', 45);
-            $table->unique(['users_id', 'companies_id']);
+            $table->unique(['user_id', 'company_id']);
         });
     }
 
