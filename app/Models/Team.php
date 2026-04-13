@@ -17,41 +17,41 @@ class Team extends Model
 
     public function leader()
     {
-        return $this->belongsTo(User::class, 'leader_user_id');
+        return $this->belongsTo(User::class);
     }
 
     public function teamMembers()
     {
-        return $this->hasMany(TeamMember::class, 'teams_id');
+        return $this->hasMany(TeamMember::class);
     }
 
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'team_members', 'teams_id', 'students_id')
+        return $this->belongsToMany(Student::class, 'team_members', 'team_id', 'student_id')
             ->withPivot('member_role', 'joined_at')
             ->withTimestamps();
     }
 
     public function teamMentors()
     {
-        return $this->hasMany(TeamMentor::class, 'teams_id');
+        return $this->hasMany(TeamMentor::class,);
     }
 
     public function mentors()
     {
-        return $this->belongsToMany(Mentor::class, 'team_mentors', 'teams_id', 'mentors_id')
+        return $this->belongsToMany(Mentor::class, 'team_mentors', 'team_id', 'mentor_id')
             ->withPivot('assigned_at', 'active')
             ->withTimestamps();
     }
 
     public function projectAssignments()
     {
-        return $this->hasMany(ProjectAssignment::class, 'teams_id');
+        return $this->hasMany(ProjectAssignment::class);
     }
 
     public function projects()
     {
-        return $this->belongsToMany(Project::class, 'project_assignments', 'teams_id', 'projects_id')
+        return $this->belongsToMany(Project::class, 'project_assignments', 'team_id', 'project_id')
             ->withPivot('assigned_at', 'status')
             ->withTimestamps();
     }

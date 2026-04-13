@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('project_assignments', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('projects_id')
+            $table->foreignId('project_id')
                 ->constrained('projects')
                 ->onDelete('cascade');
 
-            $table->foreignId('teams_id')
+            $table->foreignId('team_id')
                 ->constrained('teams')
                 ->onDelete('cascade');
 

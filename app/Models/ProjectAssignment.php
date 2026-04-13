@@ -24,11 +24,11 @@ class ProjectAssignment extends Model
 
     public function project()
     {
-        return $this->belongsTo(Project::class, 'projects_id');
+        return $this->belongsTo(Project::class);
     }
 
     public function team()
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        return $this->belongsTo(Team::class);
     }
 }

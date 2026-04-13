@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('team_mentors', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('teams_id')
+            $table->foreignId('team_id')
                 ->constrained('teams')
                 ->onDelete('cascade');
 
-            $table->foreignId('mentors_id')
+            $table->foreignId('mentor_id')
                 ->constrained('mentors')
                 ->onDelete('cascade');
 

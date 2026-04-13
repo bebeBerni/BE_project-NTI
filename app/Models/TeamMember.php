@@ -24,11 +24,11 @@ class TeamMember extends Model
 
     public function student()
     {
-        return $this->belongsTo(Student::class, 'students_id');
+        return $this->belongsTo(Student::class);
     }
 
     public function team()
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        return $this->belongsTo(Team::class);
     }
 }

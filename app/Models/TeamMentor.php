@@ -25,11 +25,11 @@ class TeamMentor extends Model
 
     public function team()
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        return $this->belongsTo(Team::class);
     }
 
     public function mentor()
     {
-        return $this->belongsTo(Mentor::class, 'mentors_id');
+        return $this->belongsTo(Mentor::class);
     }
 }
