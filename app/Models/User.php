@@ -26,7 +26,7 @@ class User extends Authenticatable
 
  public function CommissionMember()
     {
-        return $this->hasMany(CommisionsMember::class);
+        return $this->hasMany(CommissionMember::class);
     }
 
 public function Document()

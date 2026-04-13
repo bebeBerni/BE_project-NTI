@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CompanyMembers extends Model
+class CompanyMember extends Model
 {
 
   protected $table = 'company_members';
@@ -24,7 +24,7 @@ class CompanyMembers extends Model
 
     public function company()
     {
-        return $this->belongsTo(Companies::class, 'companies_id');
+        return $this->belongsTo(Company::class, 'companies_id');
     }
 
 
