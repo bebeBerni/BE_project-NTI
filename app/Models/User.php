@@ -24,6 +24,38 @@ class User extends Authenticatable
         'password',
     ];
 
+ public function CommissionMember()
+    {
+        return $this->hasMany(CommisionsMember::class);
+    }
+
+public function Document()
+{
+    return $this->hasMany(Document::class);
+}
+
+public function CompanyMember()
+{
+    return $this->hasMany(CompanyMember::class);
+}
+
+public function Student()
+{
+    return $this->hasMany(Student::class);
+}
+
+
+public function Mentor()
+{
+    return $this->hasMany(Mentor::class);
+}
+
+public function role()
+{
+    return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+}
+
+
     /**
      * The attributes that should be hidden for serialization.
      *
