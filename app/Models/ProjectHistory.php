@@ -11,8 +11,8 @@ class ProjectHistory extends Model
     use HasFactory;
 
     protected $fillable = [
-        'projects_id',
-        'teams_id',
+        'project_id',
+        'team_id',
         'result',
         'final_note',
         'finished_at',
@@ -24,11 +24,11 @@ class ProjectHistory extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'projects_id');
+        return $this->belongsTo(Project::class);
     }
 
     public function team(): BelongsTo
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        return $this->belongsTo(Team::class);
     }
 }

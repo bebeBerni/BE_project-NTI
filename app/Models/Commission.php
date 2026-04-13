@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Commision extends Model
+class Commission extends Model
 {
     use HasFactory;
 
-    protected $table = 'commisions';
+    protected $table = 'commissions';
 
     protected $fillable = [
         'name',
@@ -19,6 +19,6 @@ class Commision extends Model
 
     public function decisions()
     {
-        return $this->hasMany(Decision::class, 'commisions_id');
+        return $this->hasMany(Decision::class);
     }
 }

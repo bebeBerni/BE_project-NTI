@@ -16,6 +16,6 @@ class Category extends Model
 
     public function projectApplications(): HasMany
     {
-        return $this->hasMany(ProjectApplication::class, 'categories_id');
+        return $this->hasMany(ProjectApplication::class);
     }
 }

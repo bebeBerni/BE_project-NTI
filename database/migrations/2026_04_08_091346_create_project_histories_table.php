@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('project_histories', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('projects_id');
-            $table->unsignedBigInteger('teams_id');
+            $table->unsignedBigInteger('project_id');
+            $table->unsignedBigInteger('team_id');
 
             $table->text('result')->nullable();
             $table->text('final_note')->nullable();
@@ -19,8 +19,8 @@ return new class extends Migration
             $table->timestamp('finished_at')->nullable();
             $table->timestamps();
 
-            $table->foreign('projects_id')->references('id')->on('projects')->onDelete('cascade');
-            $table->foreign('teams_id')->references('id')->on('teams')->onDelete('cascade');
+            $table->foreign('project_id')->references('id')->on('projects')->onDelete('cascade');
+            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade');
         });
     }
 

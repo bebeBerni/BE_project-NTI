@@ -1,41 +1,39 @@
 <?php
 
-namespace App\Models;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-class ProjectApplication extends Model
+return new class extends Migration
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'projects_id',
-        'teams_id',
-        'categories_id',
-        'status',
-        'motivation',
-        'note',
-        'applied_at',
-    ];
-
-    protected $casts = [
-        'applied_at' => 'datetime',
-    ];
-
-    public function project(): BelongsTo
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
-        return $this->belongsTo(Project::class, 'projects_id');
+        Schema::create('project_applications', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
+
+            $table->foreignId('team_id')->constrained('teams')->cascadeOnDelete();
+
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
+
+            $table->string('status', 45)->default('pending');
+            $table->string('motivation', 45)->nullable();
+            $table->text('note')->nullable();
+            $table->timestamp('applied_at')->nullable();
+
+            $table->timestamps();
+        });
     }
 
-    public function team(): BelongsTo
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        Schema::dropIfExists('project_applications');
     }
-
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class, 'categories_id');
-    }
-}
+};

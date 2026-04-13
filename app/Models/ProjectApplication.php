@@ -11,9 +11,9 @@ class ProjectApplication extends Model
     use HasFactory;
 
     protected $fillable = [
-        'projects_id',
-        'teams_id',
-        'categories_id',
+        'project_id',
+        'team_id',
+        'category_id',
         'status',
         'motivation',
         'note',
@@ -26,16 +26,16 @@ class ProjectApplication extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'projects_id');
+        return $this->belongsTo(Project::class);
     }
 
     public function team(): BelongsTo
     {
-        return $this->belongsTo(Team::class, 'teams_id');
+        return $this->belongsTo(Team::class);
     }
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'categories_id');
+        return $this->belongsTo(Category::class);
     }
 }

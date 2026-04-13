@@ -9,22 +9,22 @@ class CommisionsMember extends Model
 {
     use HasFactory;
 
-    protected $table = 'commisions_members';
+    protected $table = 'commissions_members';
 
     public $timestamps = false;
 
     protected $fillable = [
         'users_id',
-        'commisions_id',
+        'commission_id',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'users_id');
+        return $this->belongsTo(User::class);
     }
 
-    public function commision()
+    public function commission()
     {
-        return $this->belongsTo(Commision::class, 'commisions_id');
+        return $this->belongsTo(Commission::class);
     }
 }

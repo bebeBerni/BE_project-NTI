@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('decisions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('projects_id');
-            $table->unsignedBigInteger('commisions_id');
+            $table->unsignedBigInteger('project_id');
+            $table->unsignedBigInteger('commission_id');
 
             $table->enum('status', [
                 'pending',
@@ -25,8 +25,8 @@ return new class extends Migration
             $table->timestamps();
 
 
-            $table->foreign('projects_id')->references('id')->on('projects')->onDelete('cascade');
-            $table->foreign('commisions_id')->references('id')->on('commisions')->onDelete('cascade');
+            $table->foreign('project_id')->references('id')->on('projects')->onDelete('cascade');
+            $table->foreign('commission_id')->references('id')->on('commissions')->onDelete('cascade');
 
 
         });

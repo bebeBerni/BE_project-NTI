@@ -16,8 +16,8 @@ class Project extends Model
         'description',
         'type',
         'created_by_user_id',
-        'companies_id',
-        'teams_id',
+        'company_id',
+        'team_id',
         'budget',
         'status',
         'deadline',
@@ -62,12 +62,12 @@ class Project extends Model
 
     public function applications()
     {
-        return $this->hasMany(ProjectApplication::class, 'projects_id');
+        return $this->hasMany(ProjectApplication::class);
     }
 
     public function decisions(): HasMany
     {
-        return $this->hasMany(Decision::class, "projects_id");
+        return $this->hasMany(Decision::class);
     }
 
     public function history(): HasMany

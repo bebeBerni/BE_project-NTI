@@ -9,11 +9,10 @@ class Decision extends Model
 {
     use HasFactory;
 
-    protected $table = 'decisions';
 
     protected $fillable = [
-        'projects_id',
-        'commisions_id',
+        'project_id',
+        'commission_id',
         'status',
         'comment',
         'decided_at',
@@ -25,11 +24,11 @@ class Decision extends Model
 
     public function project()
     {
-        return $this->belongsTo(Project::class, 'projects_id');
+        return $this->belongsTo(Project::class);
     }
 
-    public function commision()
+    public function commission()
     {
-        return $this->belongsTo(Commision::class, 'commisions_id');
+        return $this->belongsTo(Commission::class);
     }
 }
