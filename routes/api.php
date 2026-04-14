@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MentorController;
+use App\Http\Controllers\ProjectAssignmentController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Http\Request;
@@ -21,3 +22,5 @@ Route::delete('teams/{id}/students/{studentId}', [TeamController::class, 'remove
 
 Route::post('teams/{id}/mentors', [TeamController::class, 'addMentor']);
 Route::delete('teams/{id}/mentors/{mentorId}', [TeamController::class, 'removeMentor']);
+
+Route::apiResource('project-assignments', ProjectAssignmentController::class);
