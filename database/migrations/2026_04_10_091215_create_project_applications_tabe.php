@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
 
             $table->string('status', 45)->default('pending');
-            $table->string('motivation', 45)->nullable();
+            $table->text('motivation')->nullable();
             $table->text('note')->nullable();
             $table->timestamp('applied_at')->nullable();
 

@@ -21,4 +21,9 @@ class Commission extends Model
     {
         return $this->hasMany(Decision::class);
     }
+
+    public function members()
+    {
+        return $this->hasMany(CommissionMember::class, 'commission_id');
+    }
 }
