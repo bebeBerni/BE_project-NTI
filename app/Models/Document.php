@@ -18,4 +18,10 @@ class Document extends Model
     {
       return $this->belongsTo(User::class, 'users_id');
 }
+
+public function ProjectApplication()
+{
+    return $this->hasMany(ProjectApplication::class, 'project_application_id');
+}
+
 }
