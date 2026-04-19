@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+use App\Models\Role;
+use App\Models\Company;
+use App\Models\Document;
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
@@ -15,11 +18,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $user = User::factory()->create();
+        $role = Role::factory()->create();
+        $company = Company::factory()->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $user->roles()->attach($role->id);
+        $user->companies()->attach($company->id);
     }
 }
+
