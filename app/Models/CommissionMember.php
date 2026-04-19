@@ -14,7 +14,7 @@ class CommissionMember extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'users_id',
+        'user_id',
         'commission_id',
     ];
 

@@ -11,7 +11,7 @@ class CommissionMemberFactory extends Factory
     public function definition(): array
     {
         return [
-            'users_id' => User::factory(),
+            'user_id' => User::factory(),
             'commission_id' => Commission::factory(),
         ];
     }
