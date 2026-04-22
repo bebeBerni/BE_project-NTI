@@ -2,70 +2,91 @@
 
 namespace Database\Seeders;
 
-use App\Models\Mentor;
-use App\Models\Project;
-use App\Models\ProjectAssignment;
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Company;
 use App\Models\Student;
+use App\Models\Mentor;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamMentor;
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Models\Project;
+use App\Models\ProjectAssignment;
 
-use App\Models\Role;
-use App\Models\Company;
+use Database\Seeders\UserSeeder;
+use Database\Seeders\RolesSeeder;
+use Database\Seeders\UserRolesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     public function run(): void
     {
-        $role = Role::factory()->create();
-        $company = Company::factory()->create();
+        // --------------------
+        // 1. FIX ADATOK (TE SYSTEMED)
+        // --------------------
+        $this->call([
+            UserSeeder::class,
+            RolesSeeder::class,
+            UserRolesSeeder::class,
+        ]);
 
         // --------------------
-        // STUDENTS
+        // 2. COMPANIES
         // --------------------
-        User::factory(5)->create()->each(function ($user) use ($role, $company) {
-            $user->roles()->attach($role->id);
+        $companies = Company::factory(3)->create();
+
+        // user-company kapcsolat (nálad marad)
+        $users = User::all();
+
+        foreach ($users as $index => $user) {
+            $company = $companies[$index % $companies->count()];
             $user->companies()->attach($company->id);
+        }
 
+        // --------------------
+        // 3. STUDENTS + MENTORS (USER-BŐL ÉPÍTVE)
+        // --------------------
+
+        $users = User::all();
+
+        // fele student, fele mentor (egyszerű logika)
+        $half = (int) floor($users->count() / 2);
+
+        $studentUsers = $users->take($half);
+        $mentorUsers = $users->skip($half);
+
+        foreach ($studentUsers as $user) {
             Student::factory()->create([
                 'user_id' => $user->id,
             ]);
-        });
+        }
 
-        // --------------------
-        // MENTORS
-        // --------------------
-        User::factory(5)->create()->each(function ($user) use ($role, $company) {
-            $user->roles()->attach($role->id);
-            $user->companies()->attach($company->id);
-
+        foreach ($mentorUsers as $user) {
             Mentor::factory()->create([
                 'user_id' => $user->id,
             ]);
-        });
+        }
 
         $students = Student::all();
         $mentors = Mentor::all();
 
         // --------------------
-        // TEAMS (FIXED LEADERS)
+        // 4. TEAMS
         // --------------------
-        $teams = Team::factory(3)->make()->each(function ($team) use ($students) {
-            $leader = $students->random();
+        $teams = Team::factory(3)->create();
 
+        foreach ($teams as $team) {
+            $leader = $students->random();
             $team->leader_user_id = $leader->user_id;
             $team->save();
-        });
+        }
 
         // --------------------
-        // TEAM MEMBERS
+        // 5. TEAM MEMBERS
         // --------------------
         foreach ($teams as $team) {
+
             $assignedStudents = $students->random(3);
 
             foreach ($assignedStudents as $index => $student) {
@@ -76,18 +97,20 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // Ensure leader is in the team
+            // biztos leader bent van
             $leaderStudent = $students->firstWhere('user_id', $team->leader_user_id);
 
-            TeamMember::factory()->create([
-                'student_id' => $leaderStudent->id,
-                'team_id' => $team->id,
-                'member_role' => 'leader',
-            ]);
+            if ($leaderStudent) {
+                TeamMember::factory()->create([
+                    'student_id' => $leaderStudent->id,
+                    'team_id' => $team->id,
+                    'member_role' => 'leader',
+                ]);
+            }
         }
 
         // --------------------
-        // TEAM MENTORS
+        // 6. TEAM MENTORS
         // --------------------
         foreach ($teams as $team) {
             $mentor = $mentors->random();
@@ -99,7 +122,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // --------------------
-        // PROJECTS + ASSIGNMENTS
+        // 7. PROJECTS + ASSIGNMENTS
         // --------------------
         $projects = Project::factory(5)->create();
 
