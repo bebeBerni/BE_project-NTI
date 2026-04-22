@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-class CompanyController
+use App\Models\Company;
+class CompanyController  extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        return Company::with('users')->get();
     }
 
     /**
@@ -27,21 +27,22 @@ class CompanyController
      */
     public function store(Request $request)
     {
-        //
+         $company = Company::create($request->all());
+        return response()->json($company);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show( $id)
     {
-        //
+         return Company::with('users')->findOrFail($id);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit( $id)
     {
         //
     }
@@ -49,9 +50,12 @@ class CompanyController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+         $company = Company::findOrFail($id);
+        $company->update($request->all());
+
+        return response()->json($company);
     }
 
     /**
@@ -59,6 +63,7 @@ class CompanyController
      */
     public function destroy(string $id)
     {
-        //
+         Company::destroy($id);
+        return response()->json(['message' => 'Deleted']);
     }
 }
