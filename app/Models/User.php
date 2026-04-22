@@ -24,87 +24,62 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
-
+        'created_at',
+        'updated_at',
     ];
 
-        protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-      protected function casts(): array
+ public function CommissionMember()
     {
-        return [
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(CommissionMember::class);
     }
 
+public function Document()
+{
+    return $this->hasMany(Document::class);
+}
+
+public function CompanyMember()
+{
+    return $this->hasMany(CompanyMember::class);
+}
+
+public function Student()
+{
+    return $this->hasMany(Student::class);
+}
 
 
-  // 🔹 ROLES (many-to-many)
-    public function roles()
-    {
-        return $this->belongsToMany(
-            Role::class,
-            'user_roles',
-            'user_id',   // ⚠️ DB szerint!
-            'role_id'
-        );
-    }
+public function Mentor()
+{
+    return $this->hasMany(Mentor::class);
+}
 
-    // 🔹 COMPANIES (many-to-many)
-    public function companies()
-    {
-        return $this->belongsToMany(
-            Company::class,
-            'company_members',
-            'user_id',
-            'company_id'
-        );
-    }
+public function role()
+{
+    return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+}
 
-    // 🔹 STUDENT (valószínű 1:1)
-    public function student()
-    {
-        return $this->hasOne(Student::class, 'user_id');
-    }
-
-    // 🔹 MENTOR (1:1)
-    public function mentor()
-    {
-        return $this->hasOne(Mentor::class, 'user_id');
-    }
-
-    // 🔹 DOCUMENTS (1:N)
-    public function documents()
-    {
-        return $this->hasMany(Document::class, 'user_id');
-    }
-
-    // 🔹 COMPANY MEMBERS (1:N)
-    public function companyMembers()
-    {
-        return $this->hasMany(CompanyMember::class, 'user_id');
-    }
-
-    // 🔹 COMMISSION MEMBERS (1:N)
-    public function commissionMembers()
-    {
-        return $this->hasMany(CommissionMember::class, 'user_id');
-    }
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
      */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
-        */
-
-
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
-
-
+}

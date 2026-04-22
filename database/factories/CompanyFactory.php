@@ -20,7 +20,6 @@ class CompanyFactory extends Factory
     {
         return [
         'company_name' => fake()->company(),
-        'ico' => fake()->unique()->numerify('#########'),
         'description' => fake()->sentence(),
         'website' => fake()->url(),
         'address' => fake()->address(),
