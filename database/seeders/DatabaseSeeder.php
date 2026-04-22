@@ -3,19 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-<<<<<<< HEAD
 
-use App\Models\Category;
-use App\Models\Commission;
-use App\Models\CommissionMember;
-use App\Models\Company;
-use App\Models\Decision;
-use App\Models\Project;
-use App\Models\ProjectApplication;
-use App\Models\ProjectHistory;
-use App\Models\Role;
-use App\Models\Team;
-=======
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Company;
@@ -26,83 +14,35 @@ use App\Models\TeamMember;
 use App\Models\TeamMentor;
 use App\Models\Project;
 use App\Models\ProjectAssignment;
+use App\Models\Category;
+use App\Models\Commission;
+use App\Models\CommissionMember;
+use App\Models\Decision;
+use App\Models\ProjectApplication;
+use App\Models\ProjectHistory;
 
 use Database\Seeders\UserSeeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\UserRolesSeeder;
->>>>>>> e7a25bae236529e1cc29d19a99cab8eeb096e39d
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-<<<<<<< HEAD
-=======
         // --------------------
-        // 1. FIX ADATOK (TE SYSTEMED)
+        // 1. ZÁKLADNÉ SEEDRE
         // --------------------
->>>>>>> e7a25bae236529e1cc29d19a99cab8eeb096e39d
         $this->call([
             UserSeeder::class,
             RolesSeeder::class,
             UserRolesSeeder::class,
         ]);
 
-<<<<<<< HEAD
-        // --- Shared base records ---
-        $users     = User::factory(10)->create();
-        $roles     = Role::factory(3)->create();
-        $companies = Company::factory(5)->create();
-        $teams     = Team::factory(5)->create();
-        $categories = Category::all();
-
-        // Attach roles and companies to users
-        $users->each(function (User $user) use ($roles, $companies) {
-            $user->roles()->attach($roles->random()->id);
-            $user->companies()->attach($companies->random()->id);
-        });
-
-        // --- Projects (reuse existing companies, teams & users) ---
-        $projects = Project::factory(10)->create([
-            'created_by_user_id' => fn() => $users->random()->id,
-            'company_id'         => fn() => $companies->random()->id,
-            'team_id'            => fn() => $teams->random()->id,
-        ]);
-
-        // --- ProjectApplications (reuse existing projects, teams & categories) ---
-        ProjectApplication::factory(20)->create([
-            'project_id'  => fn() => $projects->random()->id,
-            'team_id'     => fn() => $teams->random()->id,
-            'category_id' => fn() => $categories->random()->id,
-        ]);
-
-        // --- ProjectHistory (reuse existing projects & teams) ---
-        ProjectHistory::factory(20)->create([
-            'project_id' => fn() => $projects->random()->id,
-            'team_id'    => fn() => $teams->random()->id,
-        ]);
-
-        // --- Commissions ---
-        $commissions = Commission::factory(5)->create();
-
-        // --- Decisions (reuse existing projects & commissions) ---
-        Decision::factory(10)->create([
-            'project_id'    => fn() => $projects->random()->id,
-            'commission_id' => fn() => $commissions->random()->id,
-        ]);
-
-        // --- CommissionMembers (reuse existing users & commissions) ---
-        CommissionMember::factory(15)->create([
-            'user_id'       => fn() => $users->random()->id,
-            'commission_id' => fn() => $commissions->random()->id,
-        ]);
-=======
         // --------------------
         // 2. COMPANIES
         // --------------------
-        $companies = Company::factory(3)->create();
+        $companies = Company::factory(5)->create();
 
-        // user-company kapcsolat (nálad marad)
         $users = User::all();
 
         foreach ($users as $index => $user) {
@@ -111,12 +51,8 @@ class DatabaseSeeder extends Seeder
         }
 
         // --------------------
-        // 3. STUDENTS + MENTORS (USER-BŐL ÉPÍTVE)
+        // 3. STUDENTS + MENTORS
         // --------------------
-
-        $users = User::all();
-
-        // fele student, fele mentor (egyszerű logika)
         $half = (int) floor($users->count() / 2);
 
         $studentUsers = $users->take($half);
@@ -140,7 +76,7 @@ class DatabaseSeeder extends Seeder
         // --------------------
         // 4. TEAMS
         // --------------------
-        $teams = Team::factory(3)->create();
+        $teams = Team::factory(5)->create();
 
         foreach ($teams as $team) {
             $leader = $students->random();
@@ -152,8 +88,7 @@ class DatabaseSeeder extends Seeder
         // 5. TEAM MEMBERS
         // --------------------
         foreach ($teams as $team) {
-
-            $assignedStudents = $students->random(3);
+            $assignedStudents = $students->random(min(3, $students->count()));
 
             foreach ($assignedStudents as $index => $student) {
                 TeamMember::factory()->create([
@@ -163,10 +98,9 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // biztos leader bent van
             $leaderStudent = $students->firstWhere('user_id', $team->leader_user_id);
 
-            if ($leaderStudent) {
+            if ($leaderStudent && !TeamMember::where('team_id', $team->id)->where('student_id', $leaderStudent->id)->exists()) {
                 TeamMember::factory()->create([
                     'student_id' => $leaderStudent->id,
                     'team_id' => $team->id,
@@ -188,10 +122,22 @@ class DatabaseSeeder extends Seeder
         }
 
         // --------------------
-        // 7. PROJECTS + ASSIGNMENTS
+        // 7. CATEGORIES
         // --------------------
-        $projects = Project::factory(5)->create();
+        $categories = Category::all();
 
+        // --------------------
+        // 8. PROJECTS
+        // --------------------
+        $projects = Project::factory(10)->create([
+            'created_by_user_id' => fn() => $users->random()->id,
+            'company_id' => fn() => $companies->random()->id,
+            'team_id' => fn() => $teams->random()->id,
+        ]);
+
+        // --------------------
+        // 9. PROJECT ASSIGNMENTS
+        // --------------------
         foreach ($projects as $project) {
             $team = $teams->random();
 
@@ -200,6 +146,45 @@ class DatabaseSeeder extends Seeder
                 'team_id' => $team->id,
             ]);
         }
->>>>>>> e7a25bae236529e1cc29d19a99cab8eeb096e39d
+
+        // --------------------
+        // 10. PROJECT APPLICATIONS
+        // --------------------
+        if ($categories->count() > 0) {
+            ProjectApplication::factory(20)->create([
+                'project_id' => fn() => $projects->random()->id,
+                'team_id' => fn() => $teams->random()->id,
+                'category_id' => fn() => $categories->random()->id,
+            ]);
+        }
+
+        // --------------------
+        // 11. PROJECT HISTORY
+        // --------------------
+        ProjectHistory::factory(20)->create([
+            'project_id' => fn() => $projects->random()->id,
+            'team_id' => fn() => $teams->random()->id,
+        ]);
+
+        // --------------------
+        // 12. COMMISSIONS
+        // --------------------
+        $commissions = Commission::factory(5)->create();
+
+        // --------------------
+        // 13. DECISIONS
+        // --------------------
+        Decision::factory(10)->create([
+            'project_id' => fn() => $projects->random()->id,
+            'commission_id' => fn() => $commissions->random()->id,
+        ]);
+
+        // --------------------
+        // 14. COMMISSION MEMBERS
+        // --------------------
+        CommissionMember::factory(15)->create([
+            'user_id' => fn() => $users->random()->id,
+            'commission_id' => fn() => $commissions->random()->id,
+        ]);
     }
 }
