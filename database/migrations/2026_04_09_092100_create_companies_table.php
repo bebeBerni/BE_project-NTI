@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('ico', 45);
             $table->longText('description');
             $table->string('website', 255)->nullable();
-            $table->string('address', 45);
+            $table->string('address', 255);
             $table->timestamps();
         });
     }

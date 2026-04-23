@@ -46,7 +46,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(
             Role::class,
-            'user_roles',
+            'role_user',
             'user_id',   // ⚠️ DB szerint!
             'role_id'
         );

@@ -14,7 +14,7 @@ class ProjectApplicationFactory extends Factory
         return [
             'project_id' => Project::factory(),
             'team_id' => Team::factory(),
-            'category_id' => Category::factory(),
+            'category_id' => Category::inRandomOrder()->value('id'),
             'status' => $this->faker->randomElement([
                 'pending',
                 'approved',

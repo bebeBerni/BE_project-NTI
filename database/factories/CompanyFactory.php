@@ -19,12 +19,11 @@ class CompanyFactory extends Factory
     public function definition(): array
     {
         return [
-        'company_name' => fake()->company(),
-        'ico' => fake()->unique()->numerify('#########'),
-        'description' => fake()->sentence(),
-        'website' => fake()->url(),
-        'address' => fake()->address(),
-        'users_id' => User::factory(), // owner
+            'company_name' => fake()->company(),
+            'ico' => fake()->numerify('#########'),
+            'description' => fake()->sentence(),
+            'website' => fake()->url(),
+            'address' => fake()->address(),
         ];
     }
 }
