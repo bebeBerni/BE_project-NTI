@@ -8,27 +8,32 @@ use Illuminate\Http\Response;
 
 class MentorController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'mentor']);
+    }
+
     /**
-     * Display a listing of mentors
+     * Show logged-in mentor only
      */
     public function index()
     {
-        $mentors = Mentor::with(['user', 'teams'])->get();
+        $mentor = auth()->user()->mentor;
 
         return response()->json([
-            'mentors' => $mentors
+            'mentor' => $mentor->load(['user', 'teams'])
         ], Response::HTTP_OK);
     }
 
     /**
-     * Store a newly created mentor
+     * Store mentor
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'users_id' => 'required|exists:users,id',
+            'user_id' => 'required|exists:users,id',
             'specialization' => 'required|string|max:45',
-            'bio' => 'required|string|max:45',
+            'bio' => 'required|string|max:255',
         ]);
 
         $mentor = Mentor::create($validated);
@@ -40,39 +45,39 @@ class MentorController extends Controller
     }
 
     /**
-     * Display a specific mentor
+     * Show only own mentor profile
      */
     public function show($id)
     {
-        $mentor = Mentor::with(['user', 'teams'])->find($id);
+        $mentor = auth()->user()->mentor;
 
-        if (!$mentor) {
+        if (!$mentor || $mentor->id != $id) {
             return response()->json([
-                'message' => 'Mentor not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         return response()->json([
-            'mentor' => $mentor
+            'mentor' => $mentor->load(['user', 'teams'])
         ], Response::HTTP_OK);
     }
 
     /**
-     * Update mentor
+     * Update own mentor
      */
     public function update(Request $request, $id)
     {
-        $mentor = Mentor::find($id);
+        $mentor = auth()->user()->mentor;
 
-        if (!$mentor) {
+        if (!$mentor || $mentor->id != $id) {
             return response()->json([
-                'message' => 'Mentor not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $validated = $request->validate([
             'specialization' => 'sometimes|string|max:45',
-            'bio' => 'sometimes|string|max:45',
+            'bio' => 'sometimes|string|max:255',
         ]);
 
         $mentor->update($validated);
@@ -84,22 +89,42 @@ class MentorController extends Controller
     }
 
     /**
-     * Delete mentor
+     * Delete own mentor
      */
     public function destroy($id)
     {
-        $mentor = Mentor::find($id);
+        $mentor = auth()->user()->mentor;
 
-        if (!$mentor) {
+        if (!$mentor || $mentor->id != $id) {
             return response()->json([
-                'message' => 'Mentor not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $mentor->delete();
 
         return response()->json([
             'message' => 'Mentor deleted successfully'
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Mentor dashboard (teams + students + projects)
+     */
+    public function dashboard()
+    {
+        $mentor = auth()->user()->mentor;
+
+        $teams = $mentor->teams()
+            ->with([
+                'teamMembers.student.user',
+                'projectAssignments.project'
+            ])
+            ->get();
+
+        return response()->json([
+            'mentor' => $mentor,
+            'teams' => $teams
         ], Response::HTTP_OK);
     }
 }

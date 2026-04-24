@@ -39,10 +39,34 @@ Route::get('/commissions/{id}/members', [CommissionController::class, 'getMember
 Route::post('/commissions/{id}/members', [CommissionController::class, 'addMember']);
 Route::delete('/commissions/{commissionId}/members/{userId}', [CommissionController::class, 'removeMember']);
 
-Route::post('teams/{id}/students', [TeamController::class, 'addStudent']);
-Route::delete('teams/{id}/students/{studentId}', [TeamController::class, 'removeStudent']);
-
-Route::post('teams/{id}/mentors', [TeamController::class, 'addMentor']);
-Route::delete('teams/{id}/mentors/{mentorId}', [TeamController::class, 'removeMentor']);
-
 Route::apiResource('project-assignments', ProjectAssignmentController::class);
+
+// --------------------
+// MIDDLEWARE
+// --------------------
+
+Route::middleware(['auth:sanctum', 'mentor'])->group(function () {
+    Route::get('/mentor', [MentorController::class, 'index']);
+    Route::get('/mentor/{id}', [MentorController::class, 'show']);
+    Route::put('/mentor/{id}', [MentorController::class, 'update']);
+    Route::delete('/mentor/{id}', [MentorController::class, 'destroy']);
+
+    Route::get('/mentor/dashboard', [MentorController::class, 'dashboard']);
+});
+
+Route::middleware(['auth:sanctum', 'student'])->group(function () {
+    Route::get('/student', [StudentController::class, 'index']);
+    Route::get('/student/{id}', [StudentController::class, 'show']);
+    Route::put('/student/{id}', [StudentController::class, 'update']);
+    Route::delete('/student/{id}', [StudentController::class, 'destroy']);
+
+    Route::get('/student/dashboard', [StudentController::class, 'dashboard']);
+});
+
+Route::middleware(['auth:sanctum', 'student'])->group(function () {
+    Route::post('/teams', [TeamController::class, 'store']);
+    Route::post('/teams/{teamId}/add-member', [TeamController::class, 'addMember']);
+    Route::delete('/teams/{teamId}/remove-member/{studentId}', [TeamController::class, 'removeMember']);
+    Route::put('/teams/{teamId}', [TeamController::class, 'update']);
+    Route::post('/teams/{teamId}/activate', [TeamController::class, 'activate']);
+});

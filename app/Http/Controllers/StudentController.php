@@ -8,30 +8,35 @@ use Illuminate\Http\Response;
 
 class StudentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'student']);
+    }
+
     /**
-     * Display a listing of students
+     * Show logged-in student
      */
     public function index()
     {
-        $students = Student::with('user')->get();
+        $student = auth()->user()->student;
 
         return response()->json([
-            'students' => $students
+            'student' => $student->load('user')
         ], Response::HTTP_OK);
     }
 
     /**
-     * Store a newly created student
+     * Store student
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'users_id' => 'required|exists:users,id',
-            'faculty' => 'required|string|max:45',
-            'department' => 'required|string|max:45',
-            'study_program' => 'required|string|max:45',
-            'year_of_study' => 'required|string|max:45',
-            'is_ukf_verified' => 'boolean',
+            'user_id' => 'required|exists:users,id',
+            'faculty' => 'required|string|max:50',
+            'department' => 'required|string|max:50',
+            'study_program' => 'required|string|max:100',
+            'year_of_study' => 'required|integer|min:1|max:5',
+            'is_ukf_verified' => 'required|boolean',
         ]);
 
         $student = Student::create($validated);
@@ -43,20 +48,20 @@ class StudentController extends Controller
     }
 
     /**
-     * Display a specific student
+     * Show own student
      */
     public function show($id)
     {
-        $student = Student::with(['user', 'teams'])->find($id);
+        $student = auth()->user()->student;
 
-        if (!$student) {
+        if (!$student || $student->id != $id) {
             return response()->json([
-                'message' => 'Student not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         return response()->json([
-            'student' => $student
+            'student' => $student->load('user')
         ], Response::HTTP_OK);
     }
 
@@ -65,20 +70,20 @@ class StudentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $student = Student::find($id);
+        $student = auth()->user()->student;
 
-        if (!$student) {
+        if (!$student || $student->id != $id) {
             return response()->json([
-                'message' => 'Student not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $validated = $request->validate([
-            'faculty' => 'sometimes|string|max:45',
-            'department' => 'sometimes|string|max:45',
-            'study_program' => 'sometimes|string|max:45',
-            'year_of_study' => 'sometimes|string|max:45',
-            'is_ukf_verified' => 'boolean',
+            'faculty' => 'sometimes|string|max:50',
+            'department' => 'sometimes|string|max:50',
+            'study_program' => 'sometimes|string|max:100',
+            'year_of_study' => 'sometimes|integer|min:1|max:5',
+            'is_ukf_verified' => 'sometimes|boolean',
         ]);
 
         $student->update($validated);
@@ -94,18 +99,39 @@ class StudentController extends Controller
      */
     public function destroy($id)
     {
-        $student = Student::find($id);
+        $student = auth()->user()->student;
 
-        if (!$student) {
+        if (!$student || $student->id != $id) {
             return response()->json([
-                'message' => 'Student not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $student->delete();
 
         return response()->json([
             'message' => 'Student deleted successfully'
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Student dashboard (team + project + mentor)
+     */
+    public function dashboard()
+    {
+        $student = auth()->user()->student;
+
+        $team = $student->teamMember()
+            ->with([
+                'team.teamMembers.student.user',
+                'team.projectAssignments.project',
+                'team.teamMentors.mentor.user'
+            ])
+            ->first();
+
+        return response()->json([
+            'student' => $student,
+            'team' => $team?->team
         ], Response::HTTP_OK);
     }
 }
