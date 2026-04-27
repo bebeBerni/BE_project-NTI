@@ -2,63 +2,97 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *
      */
     public function index()
     {
-        //
+        return User::with(['roles', 'companies'])->get();
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     *
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'first_name' => 'required|max:25',
+            'last_name'  => 'required|max:25',
+            'email'      => 'required|email|unique:users,email',
+            'password'   => 'required|min:6',
+            'phone'      => 'nullable|max:15',
+        ]);
+
+        //  hashing
+        $validated['password'] = bcrypt($validated['password']);
+
+        $user = User::create($validated);
+
+        // 🔹 role-ok (pivot: user_roles)
+        if ($request->has('roles')) {
+            $user->roles()->sync($request->roles);
+        }
+
+        return response()->json($user, 201);
     }
 
     /**
-     * Display the specified resource.
+     * Show user by ID + kapcsolatok
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        return User::with(['roles', 'companies'])->findOrFail($id);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *  User upd
      */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'first_name' => 'sometimes|max:25',
+            'last_name'  => 'sometimes|max:25',
+            'email'      => 'sometimes|email|unique:users,email,' . $id,
+            'password'   => 'nullable|min:6',
+            'phone'      => 'nullable|max:15',
+        ]);
+
+        // if password is being updated, hash it
+        if (isset($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        }
+
+        $user->update($validated);
+
+        //  role update
+        if ($request->has('roles')) {
+            $user->roles()->sync($request->roles);
+        }
+
+        return response()->json($user);
     }
 
     /**
-     * Update the specified resource in storage.
+     *  User del
      */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
-    }
+        $user = User::findOrFail($id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // pivot cleanup
+        $user->roles()->detach();
+
+        $user->delete();
+
+        return response()->json([
+            'message' => 'User deleted successfully'
+        ]);
     }
 }
