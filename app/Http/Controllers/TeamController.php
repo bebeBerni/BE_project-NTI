@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\TeamMember;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -19,6 +20,8 @@ class TeamController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Team::class);
+
         $student = auth()->user()->student;
 
         // Student already in team?
@@ -32,14 +35,12 @@ class TeamController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        // Create team
         $team = Team::create([
             'name' => $validated['name'],
             'leader_user_id' => $student->user_id,
-            'status' => 'active',
+            'status' => 'draft',
         ]);
 
-        // Add creator as leader
         TeamMember::create([
             'student_id' => $student->id,
             'team_id' => $team->id,
@@ -53,19 +54,15 @@ class TeamController extends Controller
     }
 
     /**
-     * Add student to team (leader only)
+     * Add student to team
      */
     public function addMember(Request $request, $teamId)
     {
-        $student = auth()->user()->student;
         $team = Team::findOrFail($teamId);
 
-        // Only leader can add
-        if ($team->leader_user_id !== $student->user_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('addMember', $team);
 
-        // Check max 5 members
+        // max 5 members
         if ($team->teamMembers()->count() >= 5) {
             return response()->json([
                 'message' => 'Team is full (max 5 members)'
@@ -76,9 +73,8 @@ class TeamController extends Controller
             'student_id' => 'required|exists:students,id'
         ]);
 
-        $newStudent = \App\Models\Student::find($validated['student_id']);
+        $newStudent = Student::findOrFail($validated['student_id']);
 
-        // Already in team?
         if ($newStudent->teamMember) {
             return response()->json([
                 'message' => 'Student already in a team'
@@ -101,15 +97,14 @@ class TeamController extends Controller
      */
     public function removeMember($teamId, $studentId)
     {
-        $student = auth()->user()->student;
         $team = Team::findOrFail($teamId);
 
-        if ($team->leader_user_id !== $student->user_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('removeMember', [$team, $studentId]);
 
-        // Prevent removing leader
-        if ($student->id == $studentId) {
+        $student = auth()->user()->student;
+
+        // Prevent leader removing himself
+        if ($student->id == $studentId && $team->leader_user_id === auth()->id()) {
             return response()->json([
                 'message' => 'Leader cannot remove themselves'
             ], 400);
@@ -138,12 +133,9 @@ class TeamController extends Controller
      */
     public function update(Request $request, $teamId)
     {
-        $student = auth()->user()->student;
         $team = Team::findOrFail($teamId);
 
-        if ($team->leader_user_id !== $student->user_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('update', $team);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -158,16 +150,13 @@ class TeamController extends Controller
     }
 
     /**
-     * Activate team (min 3 members)
+     * Activate team
      */
     public function activate($teamId)
     {
-        $student = auth()->user()->student;
         $team = Team::findOrFail($teamId);
 
-        if ($team->leader_user_id !== $student->user_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('activate', $team);
 
         if ($team->teamMembers()->count() < 3) {
             return response()->json([

@@ -8,106 +8,88 @@ use Illuminate\Http\Response;
 
 class ProjectAssignmentController extends Controller
 {
-    /**
-     * Display a listing of project assignments
-     */
-    public function index()
+    public function __construct()
     {
-        $projectAssignments = ProjectAssignment::with(['project', 'team'])->get();
-
-        return response()->json([
-            'project_assignments' => $projectAssignments
-        ], Response::HTTP_OK);
+        $this->middleware('auth:sanctum');
     }
 
-    /**
-     * Store a newly created project assignment
-     */
     public function store(Request $request)
     {
+        $this->authorize('create', ProjectAssignment::class);
+
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'team_id' => 'required|exists:teams,id',
-            'assigned_at' => 'nullable|date',
-            'status' => 'required|in:assigned,in_progress,completed',
         ]);
 
-        $projectAssignment = ProjectAssignment::create([
-            'project_id' => $validated['project_id'],
-            'team_id' => $validated['team_id'],
-            'assigned_at' => $validated['assigned_at'] ?? now(),
-            'status' => $validated['status'],
-        ]);
+        $validated['status'] = 'active';
+        $validated['assigned_at'] = now();
+
+        $assignment = ProjectAssignment::create($validated);
 
         return response()->json([
-            'message' => 'Project assignment created successfully',
-            'project_assignment' => $projectAssignment
+            'message' => 'Team assigned to project',
+            'assignment' => $assignment
         ], Response::HTTP_CREATED);
     }
 
-    /**
-     * Display the specified project assignment
-     */
     public function show($id)
     {
-        $projectAssignment = ProjectAssignment::with(['project', 'team'])->find($id);
+        $assignment = ProjectAssignment::with(['project', 'team'])->find($id);
 
-        if (!$projectAssignment) {
+        if (!$assignment) {
             return response()->json([
-                'message' => 'Project assignment not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Assignment not found'
+            ], 404);
         }
 
+        $this->authorize('view', $assignment);
+
         return response()->json([
-            'project_assignment' => $projectAssignment
-        ], Response::HTTP_OK);
+            'assignment' => $assignment
+        ]);
     }
 
-    /**
-     * Update the specified project assignment
-     */
     public function update(Request $request, $id)
     {
-        $projectAssignment = ProjectAssignment::find($id);
+        $assignment = ProjectAssignment::find($id);
 
-        if (!$projectAssignment) {
+        if (!$assignment) {
             return response()->json([
-                'message' => 'Project assignment not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Assignment not found'
+            ], 404);
         }
+
+        $this->authorize('update', $assignment);
 
         $validated = $request->validate([
-            'project_id' => 'sometimes|exists:projects,id',
-            'team_id' => 'sometimes|exists:teams,id',
-            'assigned_at' => 'sometimes|date',
-            'status' => 'sometimes|in:assigned,in_progress,completed',
+            'status' => 'required|string|max:45'
         ]);
 
-        $projectAssignment->update($validated);
+        $assignment->update($validated);
 
         return response()->json([
-            'message' => 'Project assignment updated successfully',
-            'project_assignment' => $projectAssignment
-        ], Response::HTTP_OK);
+            'message' => 'Assignment updated',
+            'assignment' => $assignment
+        ]);
     }
 
-    /**
-     * Remove the specified project assignment
-     */
     public function destroy($id)
     {
-        $projectAssignment = ProjectAssignment::find($id);
+        $assignment = ProjectAssignment::find($id);
 
-        if (!$projectAssignment) {
+        if (!$assignment) {
             return response()->json([
-                'message' => 'Project assignment not found'
-            ], Response::HTTP_NOT_FOUND);
+                'message' => 'Assignment not found'
+            ], 404);
         }
 
-        $projectAssignment->delete();
+        $this->authorize('delete', $assignment);
+
+        $assignment->delete();
 
         return response()->json([
-            'message' => 'Project assignment deleted successfully'
-        ], Response::HTTP_OK);
+            'message' => 'Assignment removed'
+        ]);
     }
 }
