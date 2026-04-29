@@ -11,11 +11,17 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-   ->withMiddleware(function ($middleware) {
-    $middleware->alias([
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ]);
-})
+    ->withMiddleware(function (Middleware $middleware) {
+
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
+        // 🔥 EZ KÜLÖN SOR
+        $middleware->redirectGuestsTo(fn () => null);
+
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();
