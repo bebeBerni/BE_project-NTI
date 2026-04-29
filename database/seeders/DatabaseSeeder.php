@@ -33,8 +33,8 @@ class DatabaseSeeder extends Seeder
         // 1. ZÁKLADNÉ SEEDRE
         // --------------------
         $this->call([
+             RolesSeeder::class,
             UserSeeder::class,
-            RolesSeeder::class,
             UserRolesSeeder::class,
             CategorySeeder::class,
         ]);
