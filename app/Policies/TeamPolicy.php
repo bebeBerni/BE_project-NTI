@@ -31,4 +31,15 @@ class TeamPolicy
     {
         return $team->leader_user_id === $user->id;
     }
+    public function view(User $user, Team $team): bool
+    {
+        return $team->students()->where('student_id', $user->student->id)->exists()
+            || $team->leader_user_id === $user->id
+            || $user->hasRole('admin');
+    }
+
+    public function delete(User $user, Team $team): bool
+    {
+        return $team->leader_user_id === $user->id || $user->hasRole('admin');
+    }
 }

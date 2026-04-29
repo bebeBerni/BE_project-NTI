@@ -31,4 +31,9 @@ class UserPolicy
     {
         return $user->hasRole('admin');
     }
+
+    public function manageRoles(User $user, User $target): bool
+    {
+        return $user->hasRole('admin');
+    }
 }

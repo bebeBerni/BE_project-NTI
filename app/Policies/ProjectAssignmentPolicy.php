@@ -8,16 +8,15 @@ use App\Models\ProjectAssignment;
 class ProjectAssignmentPolicy
 {
     /**
-     * Vytvorenie assignmentu (assign team → project)
+     * Admin/Mentor can see all assignments
      */
-    public function create(User $user): bool
+    public function viewAny(User $user): bool
     {
-        return $user->company_id !== null
-            || in_array($user->role, ['admin', 'mentor']);
+        return $user->hasRole(['admin', 'mentor']);
     }
 
     /**
-     * Zobrazenie assignmentu
+     * View a specific assignment
      */
     public function view(User $user, ProjectAssignment $assignment): bool
     {
@@ -25,34 +24,61 @@ class ProjectAssignmentPolicy
             return true;
         }
 
-        if ($assignment->project->company_id === $user->company_id) {
+        if ($assignment->project->company_id &&
+            $user->companies()->where('company_id', $assignment->project->company_id)->exists()) {
             return true;
         }
 
-        return in_array($user->role, ['admin', 'mentor']);
+        if ($assignment->project->created_by_user_id === $user->id) {
+            return true;
+        }
+
+        return $user->hasRole(['admin', 'mentor']);
     }
 
     /**
-     * Zrušenie assignmentu (unassign)
+     * Create assignment (assign team to project)
      */
-    public function delete(User $user, ProjectAssignment $assignment): bool
+    public function create(User $user): bool
     {
-        if ($assignment->project->company_id === $user->company_id) {
+        if ($user->companies()->exists()) {
             return true;
         }
 
-        return $user->role === 'admin';
+        return $user->hasRole(['admin', 'mentor']);
     }
 
     /**
-     * Update status (napr. active, finished)
+     * Update assignment status
      */
     public function update(User $user, ProjectAssignment $assignment): bool
     {
-        if ($assignment->project->company_id === $user->company_id) {
+        if ($assignment->project->created_by_user_id === $user->id) {
             return true;
         }
 
-        return in_array($user->role, ['admin', 'mentor']);
+        if ($assignment->project->company_id &&
+            $user->companies()->where('company_id', $assignment->project->company_id)->exists()) {
+            return true;
+        }
+
+        return $user->hasRole(['admin', 'mentor']);
+    }
+
+    /**
+     * Delete/unassign from project
+     */
+    public function delete(User $user, ProjectAssignment $assignment): bool
+    {
+        if ($assignment->project->created_by_user_id === $user->id) {
+            return true;
+        }
+
+        if ($assignment->project->company_id &&
+            $user->companies()->where('company_id', $assignment->project->company_id)->exists()) {
+            return true;
+        }
+
+        return $user->hasRole('admin');
     }
 }
