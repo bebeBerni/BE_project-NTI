@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use App\Models\Role;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -95,32 +95,14 @@ class User extends Authenticatable
     }
 public function hasRole($role)
 {
-        return $this->roles()
-        ->where('name', $role)
+    return $this->roles()
+        ->whereRaw('LOWER(name) = ?', [strtolower($role)])
         ->exists();
-
 }
-public function isAdmin()
+public function is($role)
 {
-    return $this->hasRole('admin');
+    return $this->hasRole($role);
 }
-
-public function isStudent()
-{
-    return $this->hasRole('student');
-}
-
-public function isMentor()
-{
-    return $this->hasRole('mentor');
-}
-
-public function isCompany()
-{
-    return $this->hasRole('company');
-}
-
-
 
 
 
