@@ -12,7 +12,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\AuthController;
 
 
 Route::get('/user', function (Request $request) {
@@ -90,4 +90,27 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
+});
+
+Route::middleware('auth:sanctum')->get('/test-role', function () {
+    $user = auth()->user();
+
+    return response()->json([
+        'user' => $user->email,
+        'is_admin' => $user->isAdmin(),
+        'is_student' => $user->isStudent(),
+        'is_company' => $user->isCompany(),
+    ]);
+});
+Route::middleware('auth:sanctum')->get('/test-relations', function () {
+    $user = auth()->user();
+
+    return response()->json([
+        'user' => $user->email,
+        'roles' => $user->roles,
+        'roles_names' => $user->roles->pluck('name'),
+    ]);
+});
+Route::get('/ping-db', function () {
+    return \App\Models\User::with('roles')->first();
 });
