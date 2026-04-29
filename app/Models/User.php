@@ -46,15 +46,15 @@ class User extends Authenticatable
 
 
     // 🔹 COMPANIES (many-to-many)
-    public function companies()
-    {
-        return $this->belongsToMany(
-            Company::class,
-            'company_members',
-            'user_id',
-            'company_id'
-        );
-    }
+   public function companies()
+{
+    return $this->belongsToMany(
+        Company::class,
+        'company_members',
+        'user_id',
+        'company_id'
+    )->withPivot('role_in_company');
+}
 
     // 🔹 STUDENT (valószínű 1:1)
     public function student()
@@ -85,22 +85,23 @@ class User extends Authenticatable
     {
         return $this->hasMany(CommissionMember::class, 'user_id');
     }
+    public function roles()
+{
+    return $this->belongsToMany(Role::class, 'role_user');
+}
 public function hasRole($role)
 {
     return $this->roles()
         ->whereRaw('LOWER(name) = ?', [strtolower($role)])
         ->exists();
 }
-public function is($role)
+public function isRole($role)
 {
     return $this->hasRole($role);
 }
 
 
-public function roles()
-{
-    return $this->belongsToMany(Role::class, 'role_user');
-}
+
 
     /**
      * The attributes that should be hidden for serialization.

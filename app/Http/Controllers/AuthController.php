@@ -94,4 +94,28 @@ class AuthController extends Controller
             'message' => 'Odhlásenie zo všetkých zariadení úspešné.',
         ]);
     }
+    public function changePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => ['required', 'string'],
+        'new_password' => ['required', 'string', 'min:6', 'confirmed'],
+    ]);
+
+    $user = $request->user();
+
+    // 1. ellenőrizzük a jelenlegi jelszót
+    if (!Hash::check($request->current_password, $user->password)) {
+        return response()->json([
+            'message' => 'A jelenlegi jelszó helytelen.'
+        ], 422);
+    }
+
+    // 2. új jelszó mentése
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+
+    return response()->json([
+        'message' => 'Jelszó sikeresen megváltoztatva.'
+    ]);
+}
 }

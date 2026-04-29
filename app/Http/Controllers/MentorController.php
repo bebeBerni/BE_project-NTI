@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Mentor;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Routing\Controller;
 
 class MentorController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'mentor']);
+        $this->middleware(['auth:sanctum', 'mentor']);
     }
 
     /**

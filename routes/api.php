@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommissionController;
 use App\Http\Controllers\DecisionController;
@@ -10,107 +13,132 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectHistoryController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeamController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
 
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES
+|--------------------------------------------------------------------------
+*/
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::get('/ping-db', function () {
+    return response()->json([
+        'status' => 'ok'
+    ]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED ROUTES
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [AuthController::class, 'me']);
+
+    // Auth
+Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
+    return response()->json([
+        'user' => $request->user()?->load('roles')
+    ]);
+});
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+    Route::post('/change-password', function (Request $request) {
+    if (!$request->user()) {
+        return response()->json(['message' => 'Unauthenticated'], 401);
+    }
+
+    return app(AuthController::class)->changePassword($request);
 });
 
-Route::apiResource('students', StudentController::class);
+    // Test
+    Route::get('/test-role', function (Request $request) {
+        $user = $request->user();
 
-Route::apiResource('mentors', MentorController::class);
-
-Route::apiResource('teams', TeamController::class);
-
-Route::apiResource('decisions', DecisionController::class);
-
-Route::apiResource('projects', ProjectController::class);
-
-Route::apiResource('commissions', CommissionController::class);
-
-Route::apiResource('project-histories', ProjectHistoryController::class);
-
-Route::apiResource('project-applications', ProjectApplicationController::class);
-
-Route::get('/categories', [CategoryController::class, 'index']);
-
-Route::get('/commissions/{id}/members', [CommissionController::class, 'getMembers']);
-Route::post('/commissions/{id}/members', [CommissionController::class, 'addMember']);
-Route::delete('/commissions/{commissionId}/members/{userId}', [CommissionController::class, 'removeMember']);
-
-Route::apiResource('project-assignments', ProjectAssignmentController::class);
-
-// --------------------
-// MIDDLEWARE
-// --------------------
-
-Route::middleware(['auth:sanctum', 'mentor'])->group(function () {
-    Route::get('/mentor', [MentorController::class, 'index']);
-    Route::get('/mentor/{id}', [MentorController::class, 'show']);
-    Route::put('/mentor/{id}', [MentorController::class, 'update']);
-    Route::delete('/mentor/{id}', [MentorController::class, 'destroy']);
-
-    Route::get('/mentor/dashboard', [MentorController::class, 'dashboard']);
-});
-
-Route::middleware(['auth:sanctum', 'student'])->group(function () {
-    Route::get('/student', [StudentController::class, 'index']);
-    Route::get('/student/{id}', [StudentController::class, 'show']);
-    Route::put('/student/{id}', [StudentController::class, 'update']);
-    Route::delete('/student/{id}', [StudentController::class, 'destroy']);
-
-    Route::get('/student/dashboard', [StudentController::class, 'dashboard']);
-});
-
-Route::middleware(['auth:sanctum', 'student'])->group(function () {
-    Route::post('/teams', [TeamController::class, 'store']);
-    Route::post('/teams/{teamId}/add-member', [TeamController::class, 'addMember']);
-    Route::delete('/teams/{teamId}/remove-member/{studentId}', [TeamController::class, 'removeMember']);
-    Route::put('/teams/{teamId}', [TeamController::class, 'update']);
-    Route::post('/teams/{teamId}/activate', [TeamController::class, 'activate']);
-});
-
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-
-    Route::get('/admin', function () {
-        return "Admin page";
+        return response()->json([
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('name'),
+        ]);
     });
 
-    Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
+    /*
+    |--------------------------------------------------------------------------
+    | STUDENTS (auth required)
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('students', StudentController::class);
 
-});
+    /*
+    |--------------------------------------------------------------------------
+    | MENTORS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('mentors', MentorController::class);
 
-Route::middleware('auth:sanctum')->get('/test-role', function () {
-    $user = auth()->user();
+    /*
+    |--------------------------------------------------------------------------
+    | TEAMS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('teams', TeamController::class);
 
-    return response()->json([
-        'user' => $user->email,
-        'is_admin' => $user->isAdmin(),
-        'is_student' => $user->isStudent(),
-        'is_company' => $user->isCompany(),
-    ]);
-});
-Route::middleware('auth:sanctum')->get('/test-relations', function () {
-    $user = auth()->user();
+    Route::post('/teams/{team}/add-member', [TeamController::class, 'addMember']);
+    Route::delete('/teams/{team}/remove-member/{student}', [TeamController::class, 'removeMember']);
+    Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
 
-    return response()->json([
-        'user' => $user->email,
-        'roles' => $user->roles,
-        'roles_names' => $user->roles->pluck('name'),
-    ]);
-});
-Route::get('/ping-db', function () {
-    return \App\Models\User::with('roles')->first();
+    /*
+    |--------------------------------------------------------------------------
+    | PROJECTS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('projects', ProjectController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPLICATIONS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('project-applications', ProjectApplicationController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ASSIGNMENTS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('project-assignments', ProjectAssignmentController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | HISTORY
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('project-histories', ProjectHistoryController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMMISSIONS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('commissions', CommissionController::class);
+
+    Route::get('/commissions/{commission}/members', [CommissionController::class, 'members']);
+    Route::post('/commissions/{commission}/members', [CommissionController::class, 'addMember']);
+    Route::delete('/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | DECISIONS
+    |--------------------------------------------------------------------------
+    */
+    Route::apiResource('decisions', DecisionController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | CATEGORIES
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/categories', [CategoryController::class, 'index']);
+
 });

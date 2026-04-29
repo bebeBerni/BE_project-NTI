@@ -11,7 +11,7 @@ class DocumentController extends Controller
      */
     public function index()
     {
-         return Document::with('user')->get();
+           return Document::with(['user', 'projectApplication'])->get();
     }
 
     /**
@@ -31,10 +31,10 @@ class DocumentController extends Controller
         'type' => 'required|string',
         'file_name' => 'required|string',
         'file_path' => 'required|string',
-        'teams_id' => 'required|exists:teams,id',
+        'team_id' => 'required|exists:teams,id',
     ]);
 
-    $validated['users_id'] = auth()->id();
+    $validated['user_id'] = auth()->id();
 
     $document = Document::create($validated);
 

@@ -19,7 +19,11 @@ class Company extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'company_members', 'companies_id', 'users_id')
-            ->withPivot('role_in_company');
+       return $this->belongsToMany(
+    User::class,
+    'company_members',
+    'companies_id',
+    'users_id'
+)->withPivot('role_in_company');
     }
 }

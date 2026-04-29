@@ -11,6 +11,13 @@ class ProjectApplicationController extends Controller
     /**
      * Display a listing of project applications
      */
+
+
+public function __construct()
+{
+    $this->middleware('auth:sanctum');
+}
+
     public function index()
     {
         $projectApplications = ProjectApplication::with(['project', 'team', 'category'])->get();
@@ -23,32 +30,35 @@ class ProjectApplicationController extends Controller
     /**
      * Store a newly created project application
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'team_id' => 'required|exists:teams,id',
-            'category_id' => 'required|exists:categories,id',
-            'status' => 'required|string|max:45',
-            'motivation' => 'nullable|string',
-            'note' => 'nullable|string',
-            'applied_at' => 'nullable|date',
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'project_id' => 'required|exists:projects,id',
+        'team_id' => 'required|exists:teams,id',
+        'category_id' => 'required|exists:categories,id',
+        'status' => 'required|string|max:45',
+        'motivation' => 'nullable|string',
+        'note' => 'nullable|string',
+        'applied_at' => 'nullable|date',
+    ]);
 
-        $projectApplication = ProjectApplication::create($validated);
+    $validated['submitted_by_user_id'] = auth()->id();
+    $validated['status'] = 'pending';
 
-        return response()->json([
-            'message' => 'Project application created successfully',
-            'project_application' => $projectApplication
-        ], Response::HTTP_CREATED);
-    }
+    $projectApplication = ProjectApplication::create($validated);
+
+    return response()->json([
+        'message' => 'Project application created successfully',
+        'project_application' => $projectApplication
+    ], Response::HTTP_CREATED);
+}
 
     /**
      * Display a specific project application
      */
     public function show($id)
     {
-        $projectApplication = ProjectApplication::with(['project', 'team', 'category'])->find($id);
+        $projectApplication = ProjectApplication::with(['project', 'team', 'category','submittedBy'])->find($id);
 
         if (!$projectApplication) {
             return response()->json([

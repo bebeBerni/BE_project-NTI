@@ -9,13 +9,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('commissions_members', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('commission_id');
+    $table->id();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('commission_id')->references('id')->on('commissions')->onDelete('cascade');
-        });
+    $table->unsignedBigInteger('user_id');
+    $table->unsignedBigInteger('commission_id');
+
+    $table->foreign('user_id')
+        ->references('id')
+        ->on('users')
+        ->onDelete('cascade');
+
+    $table->foreign('commission_id', 'fk_comm_members_commission')
+        ->references('id')
+        ->on('commissions')
+        ->onDelete('cascade');
+});
     }
 
     public function down(): void

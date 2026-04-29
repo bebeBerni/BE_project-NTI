@@ -25,7 +25,7 @@ class TeamController extends Controller
         $student = auth()->user()->student;
 
         // Student already in team?
-        if ($student->teamMember) {
+        if ($student->teamMembers()->exists()) {
             return response()->json([
                 'message' => 'You are already in a team'
             ], 400);

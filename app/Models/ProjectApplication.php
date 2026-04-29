@@ -11,6 +11,7 @@ class ProjectApplication extends Model
     use HasFactory;
 
     protected $fillable = [
+
         'project_id',
         'team_id',
         'category_id',
@@ -18,10 +19,13 @@ class ProjectApplication extends Model
         'motivation',
         'note',
         'applied_at',
+        'submitted_by_user_id',
     ];
 
     protected $casts = [
-        'applied_at' => 'datetime',
+           'applied_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
     ];
 
     public function project(): BelongsTo
@@ -38,4 +42,12 @@ class ProjectApplication extends Model
     {
         return $this->belongsTo(Category::class);
     }
+    public function user()
+{
+     return $this->belongsTo(User::class, 'submitted_by_user_id');
+}
+public function submittedBy()
+{
+   return $this->belongsTo(User::class, 'submitted_by_user_id');
+}
 }
