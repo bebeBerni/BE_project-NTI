@@ -43,15 +43,7 @@ class User extends Authenticatable
 
 
   // 🔹 ROLES (many-to-many)
-    public function roles()
-    {
-        return $this->belongsToMany(
-            Role::class,
-            'role_user',
-            'user_id',   // ⚠️ DB szerint!
-            'role_id'
-        );
-    }
+
 
     // 🔹 COMPANIES (many-to-many)
     public function companies()
@@ -105,11 +97,10 @@ public function is($role)
 }
 
 
-
-
-
-
-
+public function roles()
+{
+    return $this->belongsToMany(Role::class, 'role_user');
+}
 
     /**
      * The attributes that should be hidden for serialization.

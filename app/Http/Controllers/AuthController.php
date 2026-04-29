@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -28,11 +29,17 @@ class AuthController extends Controller
             'phone'      => $validated['phone'] ?? null,
         ]);
 
+        // ✅ DEFAULT ROLE
+        $role = Role::where('name', 'student')->first();
+        if ($role) {
+            $user->roles()->attach($role->id);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Registrácia úspešná.',
-            'user' => $user,
+            'user' => $user->load('roles'),
             'token' => $token,
             'token_type' => 'Bearer',
         ], 201);
@@ -57,7 +64,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Prihlásenie úspešné.',
-            'user' => $user,
+            'user' => $user->load('roles'),
             'token' => $token,
             'token_type' => 'Bearer',
         ]);
@@ -66,7 +73,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return response()->json([
-            'user' => $request->user(),
+            'user' => $request->user()->load('roles'),
         ]);
     }
 
