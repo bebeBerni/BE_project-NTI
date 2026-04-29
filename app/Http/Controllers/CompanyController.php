@@ -25,11 +25,22 @@ class CompanyController  extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-         $company = Company::create($request->all());
-        return response()->json($company);
-    }
+public function store(Request $request)
+{
+    $this->authorize('create', Company::class);
+
+    $validated = $request->validate([
+        'company_name' => 'required|string',
+        'ico' => 'required|string',
+        'description' => 'nullable|string',
+        'website' => 'required|string',
+        'address' => 'nullable|string',
+    ]);
+
+    $company = Company::create($validated);
+
+    return response()->json($company);
+}
 
     /**
      * Display the specified resource.

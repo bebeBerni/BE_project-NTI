@@ -5,11 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+
 class UserController extends Controller
 {
     /**
      *
      */
+
+public function __construct()
+{
+    $this->middleware('auth:sanctum');
+}
+
+
+
     public function index()
     {
         return User::with(['roles', 'companies'])->get();
@@ -85,7 +94,7 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-
+  $this->authorize('delete', $user);
         // pivot cleanup
         $user->roles()->detach();
 

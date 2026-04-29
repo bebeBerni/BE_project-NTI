@@ -26,10 +26,20 @@ class DocumentController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-                $document = Document::create($request->all());
-        return response()->json($document);
-    }
+{
+    $validated = $request->validate([
+        'type' => 'required|string',
+        'file_name' => 'required|string',
+        'file_path' => 'required|string',
+        'teams_id' => 'required|exists:teams,id',
+    ]);
+
+    $validated['users_id'] = auth()->id();
+
+    $document = Document::create($validated);
+
+    return response()->json($document);
+}
 
     /**
      * Display the specified resource.

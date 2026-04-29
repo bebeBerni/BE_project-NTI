@@ -93,6 +93,41 @@ class User extends Authenticatable
     {
         return $this->hasMany(CommissionMember::class, 'user_id');
     }
+public function hasRole($role)
+{
+        return $this->roles()
+        ->where('name', $role)
+        ->exists();
+
+}
+public function isAdmin()
+{
+    return $this->hasRole('admin');
+}
+
+public function isStudent()
+{
+    return $this->hasRole('student');
+}
+
+public function isMentor()
+{
+    return $this->hasRole('mentor');
+}
+
+public function isCompany()
+{
+    return $this->hasRole('company');
+}
+
+
+
+
+
+
+
+
+
 
     /**
      * The attributes that should be hidden for serialization.

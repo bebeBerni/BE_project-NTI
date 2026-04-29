@@ -81,3 +81,13 @@ Route::middleware(['auth:sanctum', 'student'])->group(function () {
     Route::put('/teams/{teamId}', [TeamController::class, 'update']);
     Route::post('/teams/{teamId}/activate', [TeamController::class, 'activate']);
 });
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    Route::get('/admin', function () {
+        return "Admin page";
+    });
+
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
+
+});
