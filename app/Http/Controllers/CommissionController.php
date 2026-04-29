@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 class CommissionController extends Controller
 {
     /**
-     * Display a listing of commissions
+     * GET /commissions
      */
     public function index()
     {
@@ -23,7 +23,7 @@ class CommissionController extends Controller
     }
 
     /**
-     * Store a newly created commission
+     * POST /commissions
      */
     public function store(Request $request)
     {
@@ -46,7 +46,7 @@ class CommissionController extends Controller
     }
 
     /**
-     * Display a specific commission
+     * GET /commissions/{id}
      */
     public function show($id)
     {
@@ -60,11 +60,11 @@ class CommissionController extends Controller
 
         return response()->json([
             'commission' => $commission
-        ], Response::HTTP_OK);
+        ]);
     }
 
     /**
-     * Update commission
+     * PUT /commissions/{id}
      */
     public function update(Request $request, $id)
     {
@@ -75,6 +75,8 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
+
+        $this->authorize('update', $commission);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:45',
@@ -91,11 +93,11 @@ class CommissionController extends Controller
         return response()->json([
             'message' => 'Commission updated successfully',
             'commission' => $commission
-        ], Response::HTTP_OK);
+        ]);
     }
 
     /**
-     * Delete commission
+     * DELETE /commissions/{id}
      */
     public function destroy($id)
     {
@@ -107,18 +109,21 @@ class CommissionController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
+        $this->authorize('delete', $commission);
+
         $commission->delete();
 
         return response()->json([
             'message' => 'Commission deleted successfully'
-        ], Response::HTTP_OK);
+        ]);
     }
+
     /**
-     * Get all members of a commission
+     * GET /commissions/{id}/members
      */
-    public function getMembers($id)
+    public function members($id)
     {
-        $commission = Commission::find($id);
+        $commission = Commission::with('members.user')->find($id);
 
         if (!$commission) {
             return response()->json([
@@ -126,18 +131,13 @@ class CommissionController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $members = CommissionMember::with('user')
-            ->where('commission_id', $id)
-            ->get();
-
         return response()->json([
-            'commission' => $commission,
-            'members' => $members
-        ], Response::HTTP_OK);
+            'members' => $commission->members
+        ]);
     }
 
     /**
-     * Add member to commission
+     * POST /commissions/{id}/members
      */
     public function addMember(Request $request, $id)
     {
@@ -148,6 +148,8 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
+
+        $this->authorize('update', $commission);
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -175,7 +177,7 @@ class CommissionController extends Controller
     }
 
     /**
-     * Remove member from commission
+     * DELETE /commissions/{id}/members/{userId}
      */
     public function removeMember($commissionId, $userId)
     {
@@ -186,6 +188,8 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
+
+        $this->authorize('update', $commission);
 
         $member = CommissionMember::where('commission_id', $commissionId)
             ->where('user_id', $userId)
@@ -201,6 +205,6 @@ class CommissionController extends Controller
 
         return response()->json([
             'message' => 'Member removed successfully'
-        ], Response::HTTP_OK);
+        ]);
     }
 }

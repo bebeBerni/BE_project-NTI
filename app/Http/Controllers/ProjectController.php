@@ -28,25 +28,20 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:45',
-            'description' => 'required|string',
-            'type' => 'required|string|max:45',
-             // 'created_by_user_id' => 'required|exists:users,id',
-           'created_by_user_id' => auth()->id(),
+       $validated = $request->validate([
+    'title' => 'required|string|max:45',
+    'description' => 'required|string',
+    'type' => 'required|string|max:45',
+    'company_id' => 'nullable|exists:companies,id',
+    'team_id' => 'nullable|exists:teams,id',
+    'budget' => 'required|numeric|min:0',
+    'status' => ['required', Rule::in([
+        'pending','active','paused','finished','archived',
+    ])],
+    'deadline' => 'nullable|date',
+]);
 
-            'company_id' => 'nullable|exists:companies,id',
-            'team_id' => 'nullable|exists:teams,id',
-            'budget' => 'required|numeric|min:0',
-            'status' => ['required', Rule::in([
-                'pending',
-                'active',
-                'paused',
-                'finished',
-                'archived',
-            ])],
-            'deadline' => 'nullable|date',
-        ]);
+$validated['created_by_user_id'] = auth()->id();
 
         $project = Project::create($validated);
 

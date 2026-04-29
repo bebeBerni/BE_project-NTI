@@ -27,4 +27,10 @@ class CommissionMember extends Model
     {
         return $this->belongsTo(Commission::class);
     }
+    public function members($id)
+{
+    $commission = Commission::with('members.user')->findOrFail($id);
+
+    return response()->json($commission->members);
+}
 }

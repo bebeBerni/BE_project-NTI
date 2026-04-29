@@ -19,8 +19,8 @@ class DocumentFactory extends Factory
     public function definition(): array
     {
         return [
-        'users_id' => User::factory(),
-       'teams_id' => Team::factory(),
+        'user_id' => User::factory(),
+       'team_id' => Team::factory(),
         'type' => 'pdf',
         'file_name' => fake()->word() . '.pdf',
         'file_path' => '/files/' . fake()->word() . '.pdf',

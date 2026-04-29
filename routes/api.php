@@ -82,7 +82,7 @@ Route::middleware(['auth:sanctum', 'student'])->group(function () {
     Route::post('/teams/{teamId}/activate', [TeamController::class, 'activate']);
 });
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     Route::get('/admin', function () {
         return "Admin page";
