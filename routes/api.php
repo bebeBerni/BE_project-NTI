@@ -29,6 +29,14 @@ Route::get('/ping-db', function () {
     ]);
 });
 
+// ✅ IDE TEDD (AUTHON KÍVÜL)
+Route::post('/debug', function (Illuminate\Http\Request $request) {
+    return response()->json([
+        'all' => $request->all(),
+        'json' => $request->json()->all(),
+        'headers' => $request->headers->all()
+    ]);
+});
 /*
 |--------------------------------------------------------------------------
 | AUTHENTICATED ROUTES
@@ -140,5 +148,6 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     |--------------------------------------------------------------------------
     */
     Route::get('/categories', [CategoryController::class, 'index']);
+//
 
 });

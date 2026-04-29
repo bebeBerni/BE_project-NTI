@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -11,14 +10,17 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    // --------------------
+    // REGISTER
+    // --------------------
     public function register(Request $request)
     {
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name'  => ['required', 'string', 'max:255'],
-            'email'      => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password'   => ['required', 'string', 'min:6', 'confirmed'],
-            'phone'      => ['nullable', 'string', 'max:20'],
+            'email'      => ['required', 'email', 'unique:users,email'],
+            'password'   => ['required', 'min:6', 'confirmed'],
+            'phone'      => ['nullable', 'string'],
         ]);
 
         $user = User::create([
@@ -29,7 +31,7 @@ class AuthController extends Controller
             'phone'      => $validated['phone'] ?? null,
         ]);
 
-        // ✅ DEFAULT ROLE
+        // default role
         $role = Role::where('name', 'student')->first();
         if ($role) {
             $user->roles()->attach($role->id);
@@ -38,84 +40,109 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Registrácia úspešná.',
             'user' => $user->load('roles'),
             'token' => $token,
-            'token_type' => 'Bearer',
         ], 201);
     }
 
+    // --------------------
+    // LOGIN
+    // --------------------
+
+    /*
     public function login(Request $request)
     {
         $validated = $request->validate([
             'email'    => ['required', 'email'],
-            'password' => ['required', 'string'],
+            'password' => ['required'],
         ]);
 
         $user = User::where('email', $validated['email'])->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Nesprávny email alebo heslo.'],
+                'email' => ['Hibás email vagy jelszó.'],
             ]);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Prihlásenie úspešné.',
             'user' => $user->load('roles'),
             'token' => $token,
-            'token_type' => 'Bearer',
         ]);
     }
+*/
 
+//proba
+public function login(Request $request)
+{
+    return response()->json([
+        'content_type' => $request->header('Content-Type'),
+        'all' => $request->all(),
+        'json' => $request->json()->all(),
+        'raw' => $request->getContent()
+    ]);
+}
+
+
+
+
+
+    // --------------------
+    // ME
+    // --------------------
     public function me(Request $request)
     {
-        return response()->json([
-            'user' => $request->user()->load('roles'),
-        ]);
+        return response()->json($request->user()->load('roles'));
     }
 
+    // --------------------
+    // LOGOUT
+    // --------------------
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Odhlásenie úspešné.',
-        ]);
+        return response()->json(['message' => 'Logged out']);
     }
 
+    // --------------------
+    // LOGOUT ALL
+    // --------------------
     public function logoutAll(Request $request)
     {
         $request->user()->tokens()->delete();
 
+        return response()->json(['message' => 'Logged out all devices']);
+    }
+
+    // --------------------
+    // CHANGE PASSWORD (FIXED)
+    // --------------------
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required'],
+            'new_password' => ['required', 'min:6', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        // check current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is wrong'
+            ], 422);
+        }
+
+        // update password
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
         return response()->json([
-            'message' => 'Odhlásenie zo všetkých zariadení úspešné.',
+            'message' => 'Password changed successfully'
         ]);
     }
-    public function changePassword(Request $request)
-{
-    $request->validate([
-        'current_password' => ['required', 'string'],
-        'new_password' => ['required', 'string', 'min:6', 'confirmed'],
-    ]);
-
-    $user = $request->user();
-
-    // 1. ellenőrizzük a jelenlegi jelszót
-    if (!Hash::check($request->current_password, $user->password)) {
-        return response()->json([
-            'message' => 'A jelenlegi jelszó helytelen.'
-        ], 422);
-    }
-
-    // 2. új jelszó mentése
-    $user->password = Hash::make($request->new_password);
-    $user->save();
-
-    return response()->json([
-        'message' => 'Jelszó sikeresen megváltoztatva.'
-    ]);
-}
 }
