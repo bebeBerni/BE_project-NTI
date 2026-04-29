@@ -22,9 +22,19 @@ class TeamPolicy
         return $team->leader_user_id === $user->id;
     }
 
-    public function removeMember(User $user, Team $team): bool
+    public function removeMember(User $user, Team $team, $studentId): bool
     {
-        return $team->leader_user_id === $user->id;
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if (!$user->mentor) {
+            return false;
+        }
+
+        return $team->mentors()
+            ->where('mentor_id', $user->mentor->id)
+            ->exists();
     }
 
     public function activate(User $user, Team $team): bool
