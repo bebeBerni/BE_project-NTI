@@ -64,7 +64,14 @@ public function store(Request $request)
     public function update(Request $request, $id)
     {
          $company = Company::findOrFail($id);
-        $company->update($request->all());
+        $validated = $request->validate([
+            'company_name' => 'required|string',
+            'ico' => 'required|string',
+            'description' => 'nullable|string',
+            'website' => 'required|string',
+            'address' => 'nullable|string',
+        ]);
+        $company->update($validated);
 
         return response()->json($company);
     }

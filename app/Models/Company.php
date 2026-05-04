@@ -22,8 +22,8 @@ class Company extends Model
        return $this->belongsToMany(
     User::class,
     'company_members',
-    'companies_id',
-    'users_id'
+    'company_id',
+    'user_id'
 )->withPivot('role_in_company');
     }
 }

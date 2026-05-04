@@ -121,7 +121,7 @@ class StudentController extends Controller
     {
         $student = auth()->user()->student;
 
-        $team = $student->teamMember()
+        $team = $student->teamMembers()
             ->with([
                 'team.teamMembers.student.user',
                 'team.projectAssignments.project',

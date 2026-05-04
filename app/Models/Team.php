@@ -25,12 +25,13 @@ class Team extends Model
         return $this->hasMany(TeamMember::class);
     }
 
+    /*
     public function students()
     {
         return $this->belongsToMany(Student::class, 'team_members', 'team_id', 'student_id')
             ->withPivot('member_role', 'joined_at')
             ->withTimestamps();
-    }
+    }*/
 
     public function teamMentors()
     {

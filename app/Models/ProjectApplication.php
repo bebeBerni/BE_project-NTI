@@ -42,12 +42,5 @@ class ProjectApplication extends Model
     {
         return $this->belongsTo(Category::class);
     }
-    public function user()
-{
-     return $this->belongsTo(User::class, 'submitted_by_user_id');
-}
-public function submittedBy()
-{
-   return $this->belongsTo(User::class, 'submitted_by_user_id');
-}
+
 }

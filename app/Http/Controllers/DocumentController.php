@@ -31,7 +31,7 @@ class DocumentController extends Controller
         'type' => 'required|string',
         'file_name' => 'required|string',
         'file_path' => 'required|string',
-        'team_id' => 'required|exists:teams,id',
+        'project_application_id' => 'nullable|exists:project_applications,id',
     ]);
 
     $validated['user_id'] = auth()->id();
