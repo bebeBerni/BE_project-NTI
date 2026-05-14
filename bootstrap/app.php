@@ -11,16 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
+   ->withMiddleware(function (Middleware $middleware) {
 
-        $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-        ]);
+    $middleware->alias([
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
+    ]);
 
-        // 🔥 EZ KÜLÖN SOR
-        $middleware->redirectGuestsTo(fn () => null);
+    $middleware->api(prepend: [
+       /*  \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, */
+    ]);
 
-    })
+    $middleware->redirectGuestsTo(fn () => null);
+
+})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })

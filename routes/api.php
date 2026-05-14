@@ -45,109 +45,42 @@ Route::post('/debug', function (Illuminate\Http\Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Auth
-Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
-    return response()->json([
-        'user' => $request->user()?->load('roles')
-    ]);
-});
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
-    Route::post('/change-password', function (Request $request) {
-    if (!$request->user()) {
-        return response()->json(['message' => 'Unauthenticated'], 401);
-    }
-
-    return app(AuthController::class)->changePassword($request);
-});
-
-    // Test
-    Route::get('/test-role', function (Request $request) {
-        $user = $request->user();
-
+    Route::get('/me', function (Request $request) {
         return response()->json([
-            'email' => $user->email,
-            'roles' => $user->roles->pluck('name'),
+            'user' => $request->user()?->load('roles')
         ]);
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | STUDENTS (auth required)
-    |--------------------------------------------------------------------------
-    */
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
+    Route::post('/change-password', function (Request $request) {
+        return app(AuthController::class)->changePassword($request);
+    });
+
+    Route::get('/test-role', function (Request $request) {
+        return [
+            'email' => $request->user()->email,
+            'roles' => $request->user()->roles->pluck('name'),
+        ];
+    });
+Route::get('/auth-debug', function (Request $request) {
+    return [
+        'bearer_token' => $request->bearerToken(),
+        'user' => $request->user(),
+        'auth_check' => auth()->check(),
+    ];
+})->middleware('auth:sanctum');
     Route::apiResource('students', StudentController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | MENTORS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('mentors', MentorController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | TEAMS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('teams', TeamController::class);
-
-    Route::post('/teams/{team}/add-member', [TeamController::class, 'addMember']);
-    Route::delete('/teams/{team}/remove-member/{student}', [TeamController::class, 'removeMember']);
-    Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | PROJECTS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('projects', ProjectController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | APPLICATIONS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('project-applications', ProjectApplicationController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | ASSIGNMENTS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('project-assignments', ProjectAssignmentController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | HISTORY
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('project-histories', ProjectHistoryController::class);
-
-    /*
-    |--------------------------------------------------------------------------
-    | COMMISSIONS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('commissions', CommissionController::class);
-
-    Route::get('/commissions/{commission}/members', [CommissionController::class, 'members']);
-    Route::post('/commissions/{commission}/members', [CommissionController::class, 'addMember']);
-    Route::delete('/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | DECISIONS
-    |--------------------------------------------------------------------------
-    */
     Route::apiResource('decisions', DecisionController::class);
 
-    /*
-    |--------------------------------------------------------------------------
-    | CATEGORIES
-    |--------------------------------------------------------------------------
-    */
     Route::get('/categories', [CategoryController::class, 'index']);
-//
 
 });
