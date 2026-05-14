@@ -53,7 +53,7 @@ class AuthController extends Controller
     // LOGIN
     // --------------------
 
-    /*
+
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -76,9 +76,9 @@ class AuthController extends Controller
             'token' => $token,
         ]);
     }
-*/
 
-//proba
+
+/*
 public function login(Request $request)
 {
     return response()->json([
@@ -88,7 +88,7 @@ public function login(Request $request)
         'raw' => $request->getContent()
     ]);
 }
-
+*/
 
 
 
