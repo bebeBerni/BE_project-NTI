@@ -102,12 +102,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student/dashboard', function (Request $request) {
         return response()->json([
             'message' => 'Dashboard endpoint reached',
-            'user_id' => $request->user()?->id
+            'user_id' => $request->user()?->id,
+            'status' => 'success'
         ]);
     });
 
-    Route::get('/student/available-teams', [StudentController::class, 'availableTeams']);
-    Route::get('/student/available-projects', [StudentController::class, 'availableProjects']);
+    Route::get('/student/available-teams', function (Request $request) {
+        return response()->json([
+            'message' => 'Available teams endpoint reached',
+            'user_id' => $request->user()?->id,
+            'status' => 'success'
+        ]);
+    });
+
+    Route::get('/student/available-projects', function (Request $request) {
+        return response()->json([
+            'message' => 'Available projects endpoint reached',
+            'user_id' => $request->user()?->id,
+            'status' => 'success'
+        ]);
+    });
+
 
 
     /*
