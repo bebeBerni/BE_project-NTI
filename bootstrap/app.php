@@ -13,9 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
    ->withMiddleware(function (Middleware $middleware) {
 
-    $middleware->alias([
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ]);
+       $middleware->alias([
+           'role' => \App\Http\Middleware\RoleMiddleware::class,
+           'student' => \App\Http\Middleware\StudentOnly::class,
+       ]);
 
     $middleware->api(prepend: [
        /*  \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, */

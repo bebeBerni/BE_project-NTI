@@ -10,12 +10,14 @@ class StudentOnly
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = auth()->user();
 
-        if (!$user || !$user->student) {
-            return response()->json([
-                'message' => 'Access denied. Students only.'
-            ], Response::HTTP_FORBIDDEN);
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if (!$user->hasRole('student')) {
+            return response()->json(['message' => 'Only students can access this'], 403);
         }
 
         return $next($request);
