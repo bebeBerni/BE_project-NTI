@@ -22,6 +22,9 @@ use App\Http\Controllers\TeamController;
 */
 
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register/student', [AuthController::class, 'registerStudent']);
+Route::post('/register/mentor', [AuthController::class, 'registerMentor']);
+Route::post('/register/company', [AuthController::class, 'registerCompany']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/ping-db', function () {

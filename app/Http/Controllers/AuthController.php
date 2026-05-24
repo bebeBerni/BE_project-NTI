@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
+use App\Models\Mentor;
+use App\Models\Student;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -15,7 +18,7 @@ class AuthController extends Controller
 
 
     // --------------------
-    // REGISTER
+    // GENERIC REGISTER
     // --------------------
     public function register(Request $request)
     {
@@ -45,6 +48,151 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $user->load('roles'),
+            'token' => $token,
+        ], 201);
+    }
+
+    // --------------------
+    // STUDENT REGISTRATION
+    // --------------------
+    public function registerStudent(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'    => ['required', 'string', 'max:255'],
+            'last_name'     => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'unique:users,email'],
+            'password'      => ['required', 'min:6', 'confirmed'],
+            'phone'         => ['nullable', 'string'],
+            'faculty'       => ['nullable', 'string'],
+            'department'    => ['nullable', 'string'],
+            'study_program' => ['nullable', 'string'],
+            'year_of_study' => ['nullable', 'integer', 'min:1', 'max:5'],
+        ]);
+
+        $user = User::create([
+            'first_name' => $validated['first_name'],
+            'last_name'  => $validated['last_name'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'phone'      => $validated['phone'] ?? null,
+        ]);
+
+        // Attach student role
+        $studentRole = Role::where('name', 'student')->first();
+        if ($studentRole) {
+            $user->roles()->attach($studentRole->id);
+        }
+
+        // Create Student profile
+        Student::create([
+            'user_id'        => $user->id,
+            'faculty'        => $validated['faculty'] ?? null,
+            'department'     => $validated['department'] ?? null,
+            'study_program'  => $validated['study_program'] ?? null,
+            'year_of_study'  => $validated['year_of_study'] ?? null,
+            'is_ukf_verified' => false,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user->load('roles', 'student'),
+            'token' => $token,
+        ], 201);
+    }
+
+    // --------------------
+    // MENTOR REGISTRATION
+    // --------------------
+    public function registerMentor(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'    => ['required', 'string', 'max:255'],
+            'last_name'     => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'unique:users,email'],
+            'password'      => ['required', 'min:6', 'confirmed'],
+            'phone'         => ['nullable', 'string'],
+            'specialization' => ['required', 'string', 'max:255'],
+            'bio'           => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user = User::create([
+            'first_name' => $validated['first_name'],
+            'last_name'  => $validated['last_name'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'phone'      => $validated['phone'] ?? null,
+        ]);
+
+        // Attach mentor role
+        $mentorRole = Role::where('name', 'mentor')->first();
+        if ($mentorRole) {
+            $user->roles()->attach($mentorRole->id);
+        }
+
+        // Create Mentor profile
+        Mentor::create([
+            'user_id'        => $user->id,
+            'specialization' => $validated['specialization'],
+            'bio'            => $validated['bio'] ?? null,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user->load('roles', 'mentor'),
+            'token' => $token,
+        ], 201);
+    }
+
+    // --------------------
+    // COMPANY REGISTRATION
+    // --------------------
+    public function registerCompany(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'   => ['required', 'string', 'max:255'],
+            'last_name'    => ['required', 'string', 'max:255'],
+            'email'        => ['required', 'email', 'unique:users,email'],
+            'password'     => ['required', 'min:6', 'confirmed'],
+            'phone'        => ['nullable', 'string'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'ico'          => ['required', 'string', 'unique:companies,ico'],
+            'description'  => ['nullable', 'string'],
+            'website'      => ['nullable', 'url'],
+            'address'      => ['nullable', 'string'],
+        ]);
+
+        $user = User::create([
+            'first_name' => $validated['first_name'],
+            'last_name'  => $validated['last_name'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($validated['password']),
+            'phone'      => $validated['phone'] ?? null,
+        ]);
+
+        // Attach company role (you may want to add this role)
+        $companyRole = Role::where('name', 'company')->first();
+        if ($companyRole) {
+            $user->roles()->attach($companyRole->id);
+        }
+
+        // Create Company
+        $company = Company::create([
+            'company_name' => $validated['company_name'],
+            'ico'          => $validated['ico'],
+            'description'  => $validated['description'] ?? null,
+            'website'      => $validated['website'] ?? null,
+            'address'      => $validated['address'] ?? null,
+        ]);
+
+        // Add user to company as admin
+        $user->companies()->attach($company->id, ['role_in_company' => 'admin']);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user->load('roles', 'companies'),
             'token' => $token,
         ], 201);
     }
