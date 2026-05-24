@@ -98,6 +98,9 @@ Route::middleware('auth:sanctum')->group(function () {
     */
 
     Route::apiResource('students', StudentController::class);
+    Route::get('/student/dashboard', [StudentController::class, 'dashboard']);
+    Route::get('/student/available-teams', [StudentController::class, 'availableTeams']);
+    Route::get('/student/available-projects', [StudentController::class, 'availableProjects']);
 
 
     /*
