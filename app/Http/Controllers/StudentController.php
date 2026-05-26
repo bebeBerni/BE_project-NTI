@@ -2,152 +2,169 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\Project;
-use App\Models\ProjectApplication;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Models\Team;
+use App\Models\Project;
+use App\Models\Student;
 
 class StudentController extends Controller
 {
-
-    /**
-     * Show logged-in student
-     */
-    public function index()
+    public function dashboard(Request $request)
     {
-        $student = auth()->user()->student;
-
         return response()->json([
-            'student' => $student->load('user')
-        ], Response::HTTP_OK);
+            'message' => 'Welcome to the student dashboard.',
+            'student' => $request->user()
+        ]);
     }
 
-    /**
-     * Show own student profile
-     */
-    public function show($id)
+    public function profile(Request $request)
     {
-        $student = auth()->user()->student;
-
-        if (!$student || $student->id != $id) {
-            return response()->json([
-                'message' => 'Forbidden'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
         return response()->json([
-            'student' => $student->load('user', 'teamMembers.team')
-        ], Response::HTTP_OK);
+            'student' => $request->user()
+        ]);
     }
 
-    /**
-     * Update student profile
-     */
-    public function update(Request $request, $id)
+    public function teams()
     {
-        $student = auth()->user()->student;
+        return response()->json([
+            'teams' => Team::all()
+        ]);
+    }
 
-        if (!$student || $student->id != $id) {
-            return response()->json([
-                'message' => 'Forbidden'
-            ], Response::HTTP_FORBIDDEN);
-        }
+    public function projects()
+    {
+        return response()->json([
+            'projects' => Project::all()
+        ]);
+    }
 
+    public function addProject(Request $request)
+    {
         $validated = $request->validate([
-            'faculty' => 'sometimes|string|max:50',
-            'department' => 'sometimes|string|max:50',
-            'study_program' => 'sometimes|string|max:100',
-            'year_of_study' => 'sometimes|integer|min:1|max:5',
+            'title' => ['required', 'string', 'max:45'],
+            'description' => ['required', 'string'],
+            'type' => ['required', 'string', 'max:45'],
+            'company_id' => ['nullable', 'exists:companies,id'],
+            'team_id' => ['nullable', 'exists:teams,id'],
+            'budget' => ['required', 'numeric', 'min:0'],
+            'status' => ['nullable', 'in:pending,active,paused,finished,archived'],
+            'deadline' => ['nullable', 'date'],
         ]);
 
-        $student->update($validated);
+        $validated['created_by_user_id'] = $request->user()->id;
+
+        $project = Project::create($validated);
 
         return response()->json([
-            'message' => 'Profile updated successfully',
-            'student' => $student
-        ], Response::HTTP_OK);
+            'message' => 'Project was created successfully.',
+            'project' => $project
+        ], 201);
     }
 
-    /**
-     * Student Dashboard - Profile + Team + Projects
-     */
-    public function dashboard()
+    public function joinProject($projectId, Request $request)
     {
-        $student = auth()->user()->student;
-        $user = auth()->user();
+        $project = Project::findOrFail($projectId);
 
-        // Get team if student is in one
-        $teamMember = $student->teamMembers()
-            ->with([
-                'team.teamMembers.student.user',
-                'team.projectAssignments.project',
-                'team.teamMentors.mentor.user'
-            ])
-            ->first();
+        $user = $request->user();
 
-        // Get projects created by student
-        $createdProjects = Project::where('created_by_user_id', $user->id)
-            ->with('company', 'team')
-            ->get();
+        $student = Student::where('user_id', $user->id)->first();
 
-        // Get projects student applied to
-        $appliedProjects = ProjectApplication::where('user_id', $user->id)
-            ->with('project')
-            ->get();
-
-        // Get projects assigned to student's team
-        $assignedProjects = $teamMember
-            ? $teamMember->team->projectAssignments()
-                ->with('project')
-                ->get()
-            : [];
-
-        return response()->json([
-            'student' => $student->load('user'),
-            'team' => $teamMember?->team,
-            'created_projects' => $createdProjects,
-            'applied_projects' => $appliedProjects,
-            'assigned_projects' => $assignedProjects,
-        ], Response::HTTP_OK);
-    }
-
-    /**
-     * Get all available teams (for joining)
-     */
-    public function availableTeams()
-    {
-        $student = auth()->user()->student;
-
-        // Check if student already in a team
-        if ($student->teamMembers()->exists()) {
+        if (!$student) {
             return response()->json([
-                'message' => 'You are already in a team'
+                'message' => 'Student profile was not found for this user.'
+            ], 404);
+        }
+
+        if (!$project->team_id) {
+            return response()->json([
+                'message' => 'This project has no assigned team.'
             ], 400);
         }
 
-        $teams = \App\Models\Team::where('status', 'draft')
-            ->withCount('teamMembers')
-            ->with('teamMembers.student.user')
-            ->having('team_members_count', '<', 5)
-            ->get();
+        $team = Team::findOrFail($project->team_id);
+
+        if ($team->students()->where('students.id', $student->id)->exists()) {
+            return response()->json([
+                'message' => 'Student is already a member of this project team.'
+            ], 409);
+        }
+
+        $team->students()->attach($student->id, [
+            'member_role' => 'member',
+            'joined_at' => now(),
+        ]);
 
         return response()->json([
-            'teams' => $teams
-        ], Response::HTTP_OK);
+            'message' => 'Successfully joined the project team.',
+            'project' => $project,
+            'team' => $team,
+            'student' => $student
+        ]);
     }
 
-    /**
-     * Get available projects (for joining)
-     */
-    public function availableProjects()
+    public function joinTeam($teamId, Request $request)
     {
-        $projects = Project::where('status', '!=', 'archived')
-            ->with('creator', 'company', 'team')
-            ->get();
+        $user = $request->user();
+
+        $student = Student::where('user_id', $user->id)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile was not found for this user.'
+            ], 404);
+        }
+
+        $team = Team::findOrFail($teamId);
+
+        if ($team->students()->where('students.id', $student->id)->exists()) {
+            return response()->json([
+                'message' => 'Student is already a member of this team.'
+            ], 409);
+        }
+
+        $team->students()->attach($student->id, [
+            'member_role' => 'member',
+            'joined_at' => now(),
+        ]);
 
         return response()->json([
-            'projects' => $projects
-        ], Response::HTTP_OK);
+            'message' => 'Successfully joined the team.',
+            'team' => $team,
+            'student' => $student
+        ], 201);
+    }
+
+    public function createTeam(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'status' => ['nullable', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        $student = Student::where('user_id', $user->id)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile was not found.'
+            ], 404);
+        }
+
+        $team = Team::create([
+            'name' => $validated['name'],
+            'leader_user_id' => $user->id,
+            'status' => $validated['status'] ?? 'active',
+        ]);
+
+        $team->students()->attach($student->id, [
+            'member_role' => 'leader',
+            'joined_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Team created successfully.',
+            'team' => $team
+        ], 201);
     }
 }

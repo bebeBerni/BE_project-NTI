@@ -98,30 +98,14 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('students', StudentController::class);
-
-    Route::get('/student/dashboard', function (Request $request) {
-        return response()->json([
-            'message' => 'Dashboard endpoint reached',
-            'user_id' => $request->user()?->id,
-            'status' => 'success'
-        ]);
-    });
-
-    Route::get('/student/available-teams', function (Request $request) {
-        return response()->json([
-            'message' => 'Available teams endpoint reached',
-            'user_id' => $request->user()?->id,
-            'status' => 'success'
-        ]);
-    });
-
-    Route::get('/student/available-projects', function (Request $request) {
-        return response()->json([
-            'message' => 'Available projects endpoint reached',
-            'user_id' => $request->user()?->id,
-            'status' => 'success'
-        ]);
+    Route::middleware('student')->group(function () {
+        Route::get('/student/dashboard', [StudentController::class, 'dashboard']);
+        Route::get('/student/available-teams', [StudentController::class, 'teams']);
+        Route::get('/student/available-projects', [StudentController::class, 'projects']);
+        Route::post('/student/projects', [StudentController::class, 'addProject']);
+        Route::post('/student/projects/{project}/join', [StudentController::class, 'joinProject']);
+        Route::post('/student/teams/{team}/join', [StudentController::class, 'joinTeam']);
+        Route::post('/student/teams', [StudentController::class, 'createTeam']);
     });
 
 
