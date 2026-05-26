@@ -131,11 +131,10 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('teams', TeamController::class);
-
-    Route::post('/teams/{team}/add-member', [TeamController::class, 'addMember']);
-    Route::delete('/teams/{team}/remove-member/{student}', [TeamController::class, 'removeMember']);
+    Route::get('/teams', [TeamController::class, 'index']);
+    Route::get('/teams/{team}', [TeamController::class, 'show']);
     Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
+    Route::post('/teams/{team}/deactivate', [TeamController::class, 'deactivate']);
 
 
     /*
