@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class AdminOnly
 {
@@ -11,10 +12,10 @@ class AdminOnly
     {
         $user = $request->user();
 
-        if (!$user || $user->role !== 'admin') {
+        if (!$user || !$user->hasRole('admin')) {
             return response()->json([
                 'message' => 'Forbidden - Admins only'
-            ], 403);
+            ], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

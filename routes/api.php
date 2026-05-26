@@ -25,7 +25,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/register/student', [AuthController::class, 'registerStudent']);
 Route::post('/register/mentor', [AuthController::class, 'registerMentor']);
 Route::post('/register/company', [AuthController::class, 'registerCompany']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1');
 
 Route::get('/ping-db', function () {
     return response()->json([

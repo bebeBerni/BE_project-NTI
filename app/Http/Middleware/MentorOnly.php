@@ -13,7 +13,9 @@ class MentorOnly
         $user = $request->user();
 
         if (!$user || !$user->mentor) {
-            abort(403, 'Access denied. Mentors only.');
+            return response()->json([
+                'message' => 'Access denied. Mentors only.'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

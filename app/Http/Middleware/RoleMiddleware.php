@@ -8,29 +8,24 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle($request, Closure $next, ...$roles)
-{
-  $user = auth()->user();
-  
-if (!$user) {
-    abort(403);
-}
+    {
+        $user = auth()->user();
 
-$user->load('roles');
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
 
-    if (!$user) {
-        abort(403);
+        $user->load('roles');
+
+        if (!$user->roles->pluck('name')->intersect($roles)->count()) {
+            return response()->json([
+                'message' => 'Forbidden - insufficient permissions'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        return $next($request);
     }
-
-   if (!$user || !$user->roles->pluck('name')->intersect($roles)->count()) {
-    abort(403);
-}
-
-    return $next($request);
-}
 }

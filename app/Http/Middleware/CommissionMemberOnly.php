@@ -8,22 +8,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CommissionMemberOnly
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
-
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
         if (!$user) {
-            abort(401);
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], Response::HTTP_UNAUTHORIZED);
         }
 
         if (!$user->commissionMembers()->exists()) {
-            abort(403, 'Commission members only');
+            return response()->json([
+                'message' => 'Commission members only'
+            ], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

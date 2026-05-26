@@ -11,12 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-   ->withMiddleware(function (Middleware $middleware) {
+    ->withMiddleware(function (Middleware $middleware) {
 
-       $middleware->alias([
-           'role' => \App\Http\Middleware\RoleMiddleware::class,
-           'student' => \App\Http\Middleware\StudentOnly::class,
-       ]);
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'student' => \App\Http\Middleware\StudentOnly::class,
+            'mentor' => \App\Http\Middleware\MentorOnly::class,
+            'admin' => \App\Http\Middleware\AdminOnly::class,
+            'company' => \App\Http\Middleware\CompanyOnly::class,
+            'commission' => \App\Http\Middleware\CommissionMemberOnly::class,
+        ]);
 
     $middleware->api(prepend: [
        /*  \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, */

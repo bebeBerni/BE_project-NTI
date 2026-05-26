@@ -10,10 +10,6 @@ use Illuminate\Http\Response;
 
 class StudentController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth:sanctum', 'student']);
-    }
 
     /**
      * Show logged-in student
