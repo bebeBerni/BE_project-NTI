@@ -5,126 +5,152 @@ namespace App\Http\Controllers;
 use App\Models\Mentor;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Models\Team;
+use App\Models\Student;
 
 class MentorController extends Controller
 {
-    public function __construct()
+    public function dashboard(Request $request)
     {
-        $this->middleware(['auth:sanctum', 'mentor']);
-    }
+        $user = $request->user();
 
-    /**
-     * Show logged-in mentor only
-     */
-    public function index()
-    {
-        $mentor = auth()->user()->mentor;
+        $mentor = Mentor::where('user_id', $user->id)->first();
+
+        if (!$mentor) {
+            return response()->json([
+                'message' => 'Mentor profile was not found.'
+            ], 404);
+        }
 
         return response()->json([
-            'mentor' => $mentor->load(['user', 'teams'])
-        ], Response::HTTP_OK);
-    }
-
-    /**
-     * Store mentor
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'specialization' => 'required|string|max:45',
-            'bio' => 'required|string|max:255',
-        ]);
-
-        $mentor = Mentor::create($validated);
-
-        return response()->json([
-            'message' => 'Mentor created successfully',
+            'message' => 'Welcome to the mentor dashboard.',
+            'user' => $user,
             'mentor' => $mentor
-        ], Response::HTTP_CREATED);
-    }
-
-    /**
-     * Show only own mentor profile
-     */
-    public function show($id)
-    {
-        $mentor = auth()->user()->mentor;
-
-        if (!$mentor || $mentor->id != $id) {
-            return response()->json([
-                'message' => 'Forbidden'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        return response()->json([
-            'mentor' => $mentor->load(['user', 'teams'])
-        ], Response::HTTP_OK);
-    }
-
-    /**
-     * Update own mentor
-     */
-    public function update(Request $request, $id)
-    {
-        $mentor = auth()->user()->mentor;
-
-        if (!$mentor || $mentor->id != $id) {
-            return response()->json([
-                'message' => 'Forbidden'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        $validated = $request->validate([
-            'specialization' => 'sometimes|string|max:45',
-            'bio' => 'sometimes|string|max:255',
         ]);
-
-        $mentor->update($validated);
-
-        return response()->json([
-            'message' => 'Mentor updated successfully',
-            'mentor' => $mentor
-        ], Response::HTTP_OK);
     }
 
-    /**
-     * Delete own mentor
-     */
-    public function destroy($id)
+    public function managedTeams(Request $request)
     {
-        $mentor = auth()->user()->mentor;
+        $user = $request->user();
 
-        if (!$mentor || $mentor->id != $id) {
+        $mentor = Mentor::where('user_id', $user->id)->first();
+
+        if (!$mentor) {
             return response()->json([
-                'message' => 'Forbidden'
-            ], Response::HTTP_FORBIDDEN);
+                'message' => 'Mentor profile was not found.'
+            ], 404);
         }
 
-        $mentor->delete();
-
-        return response()->json([
-            'message' => 'Mentor deleted successfully'
-        ], Response::HTTP_OK);
-    }
-
-    /**
-     * Mentor dashboard (teams + students + projects)
-     */
-    public function dashboard()
-    {
-        $mentor = auth()->user()->mentor;
-
-        $teams = $mentor->teams()
-            ->with([
-                'teamMembers.student.user',
-                'projectAssignments.project'
-            ])
-            ->get();
+        $teams = $mentor->teams()->get();
 
         return response()->json([
             'mentor' => $mentor,
             'teams' => $teams
-        ], Response::HTTP_OK);
+        ]);
+    }
+
+    public function assignToTeam($teamId, Request $request)
+    {
+        $user = $request->user();
+
+        $mentor = Mentor::where('user_id', $user->id)->first();
+
+        if (!$mentor) {
+            return response()->json([
+                'message' => 'Mentor profile was not found.'
+            ], 404);
+        }
+
+        $team = Team::findOrFail($teamId);
+
+        if ($mentor->teams()->where('teams.id', $team->id)->exists()) {
+            return response()->json([
+                'message' => 'Mentor is already assigned to this team.'
+            ], 409);
+        }
+
+        $mentor->teams()->attach($team->id, [
+            'assigned_at' => now(),
+            'active' => true,
+        ]);
+
+        return response()->json([
+            'message' => 'Mentor was assigned to the team successfully.',
+            'mentor' => $mentor,
+            'team' => $team
+        ], 201);
+    }
+
+    public function addStudentToTeam($teamId, $studentId, Request $request)
+    {
+        $user = $request->user();
+
+        $mentor = Mentor::where('user_id', $user->id)->first();
+
+        if (!$mentor) {
+            return response()->json([
+                'message' => 'Mentor profile was not found.'
+            ], 404);
+        }
+
+        $team = Team::findOrFail($teamId);
+        $student = Student::findOrFail($studentId);
+
+        if (!$mentor->teams()->where('teams.id', $team->id)->exists()) {
+            return response()->json([
+                'message' => 'You are not allowed to manage this team.'
+            ], 403);
+        }
+
+        if ($team->students()->where('students.id', $student->id)->exists()) {
+            return response()->json([
+                'message' => 'Student is already a member of this team.'
+            ], 409);
+        }
+
+        $team->students()->attach($student->id, [
+            'member_role' => 'member',
+            'joined_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Student was added to the team successfully.',
+            'team' => $team,
+            'student' => $student
+        ], 201);
+    }
+
+    public function removeStudentFromTeam($teamId, $studentId, Request $request)
+    {
+        $user = $request->user();
+
+        $mentor = Mentor::where('user_id', $user->id)->first();
+
+        if (!$mentor) {
+            return response()->json([
+                'message' => 'Mentor profile was not found.'
+            ], 404);
+        }
+
+        $team = Team::findOrFail($teamId);
+        $student = Student::findOrFail($studentId);
+
+        if (!$mentor->teams()->where('teams.id', $team->id)->exists()) {
+            return response()->json([
+                'message' => 'You are not allowed to manage this team.'
+            ], 403);
+        }
+
+        if (!$team->students()->where('students.id', $student->id)->exists()) {
+            return response()->json([
+                'message' => 'Student is not a member of this team.'
+            ], 404);
+        }
+
+        $team->students()->detach($student->id);
+
+        return response()->json([
+            'message' => 'Student was removed from the team successfully.'
+        ]);
     }
 }

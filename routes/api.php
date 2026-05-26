@@ -116,7 +116,13 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('mentors', MentorController::class);
+    Route::middleware('mentor')->group(function () {
+        Route::get('/mentor/dashboard', [MentorController::class, 'dashboard']);
+        Route::get('/mentor/teams', [MentorController::class, 'managedTeams']);
+        Route::post('/mentor/teams/{team}/students/{student}/add', [MentorController::class, 'addStudentToTeam']);
+        Route::delete('/mentor/teams/{team}/students/{student}/remove', [MentorController::class, 'removeStudentFromTeam']);
+        Route::post('/mentor/teams/{team}/assign', [MentorController::class, 'assignToTeam']);
+    });
 
 
     /*
