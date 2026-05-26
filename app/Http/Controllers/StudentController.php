@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProjectAssignment;
 use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\Project;
@@ -63,8 +64,6 @@ class StudentController extends Controller
 
     public function joinProject($projectId, Request $request)
     {
-        $project = Project::findOrFail($projectId);
-
         $user = $request->user();
 
         $student = Student::where('user_id', $user->id)->first();
@@ -75,31 +74,39 @@ class StudentController extends Controller
             ], 404);
         }
 
-        if (!$project->team_id) {
+        $team = $student->teams()->first();
+
+        if (!$team) {
             return response()->json([
-                'message' => 'This project has no assigned team.'
+                'message' => 'Student is not a member of any team.'
             ], 400);
         }
 
-        $team = Team::findOrFail($project->team_id);
+        $project = Project::findOrFail($projectId);
 
-        if ($team->students()->where('students.id', $student->id)->exists()) {
+        $exists = ProjectAssignment::where('project_id', $project->id)
+            ->where('team_id', $team->id)
+            ->exists();
+
+        if ($exists) {
             return response()->json([
-                'message' => 'Student is already a member of this project team.'
+                'message' => 'This team is already assigned to this project.'
             ], 409);
         }
 
-        $team->students()->attach($student->id, [
-            'member_role' => 'member',
-            'joined_at' => now(),
+        $assignment = ProjectAssignment::create([
+            'project_id' => $project->id,
+            'team_id' => $team->id,
+            'status' => 'assigned',
+            'assigned_at' => now(),
         ]);
 
         return response()->json([
-            'message' => 'Successfully joined the project team.',
+            'message' => 'Team successfully joined the project.',
             'project' => $project,
             'team' => $team,
-            'student' => $student
-        ]);
+            'assignment' => $assignment
+        ], 201);
     }
 
     public function joinTeam($teamId, Request $request)

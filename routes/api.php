@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -92,6 +93,27 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
+        Route::get('/admin/users', [AdminController::class, 'users']);
+        Route::get('/admin/teams', [AdminController::class, 'teams']);
+        Route::get('/admin/projects', [AdminController::class, 'projects']);
+        Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
+
+        Route::apiResource('teams', TeamController::class);
+        Route::apiResource('projects', ProjectController::class);
+        Route::apiResource('project-assignments', ProjectAssignmentController::class);
+        Route::apiResource('students', StudentController::class);
+        Route::apiResource('mentors', MentorController::class);
+    });
+
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +191,10 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('project-assignments', ProjectAssignmentController::class);
+    Route::get('/project-assignments', [ProjectAssignmentController::class, 'index']);
+    Route::get('/project-assignments/{id}', [ProjectAssignmentController::class, 'show']);
+    Route::put('/project-assignments/{id}', [ProjectAssignmentController::class, 'update']);
+    Route::delete('/project-assignments/{id}', [ProjectAssignmentController::class, 'destroy']);
 
 
     /*

@@ -8,42 +8,18 @@ use Illuminate\Http\Response;
 
 class ProjectAssignmentController extends Controller
 {
-    public function __construct()
+    public function index()
     {
-        $this->middleware('auth:sanctum');
-    }
-
-    public function store(Request $request)
-    {
-        $this->authorize('create', ProjectAssignment::class);
-
-        $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'team_id' => 'required|exists:teams,id',
-        ]);
-
-        $validated['status'] = 'active';
-        $validated['assigned_at'] = now();
-
-        $assignment = ProjectAssignment::create($validated);
+        $assignments = ProjectAssignment::with(['project', 'team'])->get();
 
         return response()->json([
-            'message' => 'Team assigned to project',
-            'assignment' => $assignment
-        ], Response::HTTP_CREATED);
+            'assignments' => $assignments
+        ]);
     }
 
     public function show($id)
     {
-        $assignment = ProjectAssignment::with(['project', 'team'])->find($id);
-
-        if (!$assignment) {
-            return response()->json([
-                'message' => 'Assignment not found'
-            ], 404);
-        }
-
-        $this->authorize('view', $assignment);
+        $assignment = ProjectAssignment::with(['project', 'team'])->findOrFail($id);
 
         return response()->json([
             'assignment' => $assignment
@@ -52,44 +28,28 @@ class ProjectAssignmentController extends Controller
 
     public function update(Request $request, $id)
     {
-        $assignment = ProjectAssignment::find($id);
-
-        if (!$assignment) {
-            return response()->json([
-                'message' => 'Assignment not found'
-            ], 404);
-        }
-
-        $this->authorize('update', $assignment);
+        $assignment = ProjectAssignment::findOrFail($id);
 
         $validated = $request->validate([
-            'status' => 'required|string|max:45'
+            'status' => ['required', 'string', 'max:45'],
         ]);
 
         $assignment->update($validated);
 
         return response()->json([
-            'message' => 'Assignment updated',
+            'message' => 'Project assignment updated successfully.',
             'assignment' => $assignment
         ]);
     }
 
     public function destroy($id)
     {
-        $assignment = ProjectAssignment::find($id);
-
-        if (!$assignment) {
-            return response()->json([
-                'message' => 'Assignment not found'
-            ], 404);
-        }
-
-        $this->authorize('delete', $assignment);
+        $assignment = ProjectAssignment::findOrFail($id);
 
         $assignment->delete();
 
         return response()->json([
-            'message' => 'Assignment removed'
+            'message' => 'Project assignment removed successfully.'
         ]);
     }
 }
