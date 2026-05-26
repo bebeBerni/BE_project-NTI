@@ -2,78 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Document;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
 class DocumentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-           return Document::with(['user', 'projectApplication'])->get();
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'type' => 'required|string',
-        'file_name' => 'required|string',
-        'file_path' => 'required|string',
-        'project_application_id' => 'nullable|exists:project_applications,id',
-    ]);
-
-    $validated['user_id'] = auth()->id();
-
-    $document = Document::create($validated);
-
-    return response()->json($document);
-}
-
-    /**
-     * Display the specified resource.
-     */
-    public function show( $id)
     {
-          return Document::findOrFail($id);
-    }
+        $validated = $request->validate([
+            'project_application_id' => ['required', 'string', 'max:45'],
+            'type' => ['required', 'string', 'max:45'],
+            'file' => [
+                'required',
+                'file',
+                'mimes:pdf,doc,docx,jpg,jpeg,png',
+                'max:5120'
+            ],
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit( $id)
-    {
-        //
-    }
+        $file = $request->file('file');
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $document = Document::findOrFail($id);
-        $document->update($request->all());
+        // Store file in storage/app/public/documents
+        $path = $file->store('documents', 'public');
 
-        return response()->json($document);
-    }
+        $document = Document::create([
+            'user_id' => $request->user()->id,
+            'project_application_id' => $validated['project_application_id'],
+            'type' => $validated['type'],
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        Document::destroy($id);
-        return response()->json(['message' => 'Deleted']);
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+
+            'upload_at' => now(),
+        ]);
+
+        return response()->json([
+            'message' => 'File uploaded successfully.',
+            'document' => $document,
+
+            // Public URL
+            'url' => Storage::disk('public')->url($path),
+        ], 201);
     }
 }

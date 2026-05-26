@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DocumentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -136,6 +137,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
     Route::post('/teams/{team}/deactivate', [TeamController::class, 'deactivate']);
 
+    /*
+    |--------------------------------------------------------------------------
+    | DOCUMENTS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/documents', [DocumentController::class, 'store']);
 
     /*
     |--------------------------------------------------------------------------

@@ -7,12 +7,15 @@ use App\Models\ProjectApplication;
 use App\Models\User;
 class Document extends Model
 {
-     protected $fillable = [
+    public $timestamps = false;
+
+    protected $fillable = [
         'user_id',
         'project_application_id',
         'type',
         'file_name',
         'file_path',
+        'upload_at',
     ];
 
 
