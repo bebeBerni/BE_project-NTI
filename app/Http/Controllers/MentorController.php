@@ -10,6 +10,45 @@ use App\Models\Student;
 
 class MentorController extends Controller
 {
+public function index(Request $request)
+{
+    $query = Mentor::query()->with('user');
+
+if ($request->filled('search')) {
+    $search = $request->search;
+
+    $query->where(function ($q) use ($search) {
+        $q->where('specialization', 'like', "%{$search}%")
+          ->orWhereHas('user', function ($u) use ($search) {
+              $u->where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('phone', 'like', "%{$search}%");
+          });
+    });
+}
+
+    $mentors = $query->get()->map(function ($mentor) {
+        return [
+            'user_id' => $mentor->user_id,
+            'first_name' => $mentor->user->first_name ?? null,
+            'last_name' => $mentor->user->last_name ?? null,
+            'email' => $mentor->user->email ?? null,
+            'specialization' => $mentor->specialization,
+            'phone' => $mentor->user->phone ?? null,
+
+        ];
+    });
+
+    return response()->json([
+        'mentors' => $mentors
+    ]);
+}
+
+
+
+
+
     public function dashboard(Request $request)
     {
         $user = $request->user();
