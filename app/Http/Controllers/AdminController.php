@@ -27,12 +27,30 @@ class AdminController extends Controller
         ]);
     }
 
-    public function users()
-    {
-        return response()->json([
-            'users' => User::with('roles')->get()
-        ]);
+ public function users(Request $request)
+{
+    return $this->getUsers($request);
+}
+
+private function getUsers(Request $request)
+{
+    $query = User::with('roles');
+
+    if ($request->filled('search')) {
+        $search = $request->search;
+
+        $query->where(function ($q) use ($search) {
+            $q->where('first_name', 'like', "%{$search}%")
+              ->orWhere('last_name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%")
+              ->orWhere('phone', 'like', "%{$search}%");
+        });
     }
+
+    return response()->json([
+        'users' => $query->get()
+    ]);
+}
 
     public function teams()
     {
@@ -54,4 +72,9 @@ class AdminController extends Controller
             'assignments' => ProjectAssignment::with(['project', 'team'])->get()
         ]);
     }
+
+
+
+
+
 }
