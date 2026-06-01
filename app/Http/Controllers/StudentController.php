@@ -12,9 +12,28 @@ class StudentController extends Controller
 {
     public function dashboard(Request $request)
     {
+        $user = $request->user();
+
+        $student = Student::with([
+            'user',
+            'teams.students.user',
+            'teams.project',
+        ])->where('user_id', $user->id)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile was not found.'
+            ], 404);
+        }
+
+        $team = $student->teams->first();
+
         return response()->json([
             'message' => 'Welcome to the student dashboard.',
-            'student' => $request->user()
+            'student' => $student,
+            'team' => $team,
+            'team_members' => $team ? $team->students : [],
+            'project' => $team ? $team->project : null,
         ]);
     }
 

@@ -28,9 +28,12 @@ class Team extends Model
 
     public function students()
     {
-        return $this->belongsToMany(Student::class, 'team_members', 'team_id', 'student_id')
-            ->withPivot('member_role', 'joined_at')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            Student::class,
+            'team_members',
+            'team_id',
+            'student_id'
+        )->withPivot('member_role');
     }
 
     public function teamMentors()
@@ -55,5 +58,10 @@ class Team extends Model
         return $this->belongsToMany(Project::class, 'project_assignments', 'team_id', 'project_id')
             ->withPivot('assigned_at', 'status')
             ->withTimestamps();
+    }
+
+    public function project()
+    {
+        return $this->hasOne(Project::class);
     }
 }
