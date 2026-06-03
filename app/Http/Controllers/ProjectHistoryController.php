@@ -11,13 +11,18 @@ class ProjectHistoryController extends Controller
     /**
      * Display a listing of project histories
      */
-    public function index()
+    public function index(Request $request)
     {
-        $projectHistories = ProjectHistory::with(['project', 'team'])->get();
+        $perPage = $request->get('per_page', 6);
+
+        $projectHistories = ProjectHistory::with(['project', 'team'])
+            ->where('result', 'success')
+            ->latest('finished_at')
+            ->paginate($perPage);
 
         return response()->json([
             'project_histories' => $projectHistories
-        ], Response::HTTP_OK);
+        ]);
     }
 
     /**

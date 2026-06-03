@@ -30,6 +30,16 @@ Route::post('/register/company', [AuthController::class, 'registerCompany']);
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:5,1');
 
+Route::get('/mentors', [MentorController::class, 'index']);
+
+Route::get('/teams', [TeamController::class, 'index']);
+Route::get('/teams/{team}', [TeamController::class, 'show']);
+
+Route::get('/projects', [ProjectController::class, 'index']);
+Route::get('/projects/{project}', [ProjectController::class, 'show']);
+
+Route::apiResource('project-histories', ProjectHistoryController::class);
+
 Route::get('/ping-db', function () {
     return response()->json([
         'status' => 'ok',
@@ -107,11 +117,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
 
-        Route::apiResource('teams', TeamController::class);
-        Route::apiResource('projects', ProjectController::class);
         Route::apiResource('project-assignments', ProjectAssignmentController::class);
         Route::apiResource('students', StudentController::class);
-        Route::apiResource('mentors', MentorController::class);
     });
 
 
@@ -154,8 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/teams', [TeamController::class, 'index']);
-    Route::get('/teams/{team}', [TeamController::class, 'show']);
+
     Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
     Route::post('/teams/{team}/deactivate', [TeamController::class, 'deactivate']);
 
@@ -166,14 +172,6 @@ Route::middleware('auth:sanctum')->group(function () {
     */
 
     Route::post('/documents', [DocumentController::class, 'store']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | PROJECTS
-    |--------------------------------------------------------------------------
-    */
-
-    Route::apiResource('projects', ProjectController::class);
 
 
     /*
@@ -195,15 +193,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/project-assignments/{id}', [ProjectAssignmentController::class, 'show']);
     Route::put('/project-assignments/{id}', [ProjectAssignmentController::class, 'update']);
     Route::delete('/project-assignments/{id}', [ProjectAssignmentController::class, 'destroy']);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | PROJECT HISTORIES
-    |--------------------------------------------------------------------------
-    */
-
-    Route::apiResource('project-histories', ProjectHistoryController::class);
 
 
     /*
