@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Company;
+use App\Models\Project;
 class CompanyController  extends Controller
 {
     /**
@@ -83,5 +84,44 @@ public function store(Request $request)
     {
          Company::destroy($id);
         return response()->json(['message' => 'Deleted']);
+    }
+
+    public function myCompany(Request $request)
+    {
+        return response()->json(
+            $request->user()
+                ->companies()
+                ->with('users')
+                ->first()
+        );
+    }
+    public function updateMyCompany(Request $request)
+    {
+        $company = $request->user()
+            ->companies()
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'ico' => 'required|string|max:45',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url',
+            'address' => 'nullable|string|max:255',
+        ]);
+
+        $company->update($validated);
+
+        return response()->json($company);
+    }
+    public function myProjects(Request $request)
+    {
+        $company = $request->user()
+            ->companies()
+            ->first();
+
+        return Project::where(
+            'company_id',
+            $company->id
+        )->get();
     }
 }

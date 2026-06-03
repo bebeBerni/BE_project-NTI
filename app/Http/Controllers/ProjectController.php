@@ -28,27 +28,31 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-       $validated = $request->validate([
-    'title' => 'required|string|max:45',
-    'description' => 'required|string',
-    'type' => 'required|string|max:45',
-    'company_id' => 'nullable|exists:companies,id',
-    'team_id' => 'nullable|exists:teams,id',
-    'budget' => 'required|numeric|min:0',
-    'status' => ['required', Rule::in([
-        'pending','active','paused','finished','archived',
-    ])],
-    'deadline' => 'nullable|date',
-]);
+        $validated = $request->validate([
+            'title' => 'required|string|max:45',
+            'description' => 'required|string',
+            'type' => 'required|string|max:45',
+            'team_id' => 'nullable|exists:teams,id',
+            'budget' => 'required|numeric|min:0',
+            'status' => ['required', Rule::in([
+                'pending','active','paused','finished','archived',
+            ])],
+            'deadline' => 'nullable|date',
+        ]);
 
-$validated['created_by_user_id'] = auth()->id();
+        $company = $request->user()
+            ->companies()
+            ->first();
+
+        $validated['company_id'] = $company->id;
+        $validated['created_by_user_id'] = $request->user()->id;
 
         $project = Project::create($validated);
 
         return response()->json([
             'message' => 'Project created successfully',
             'project' => $project
-        ], Response::HTTP_CREATED);
+        ], 201);
     }
 
     /**

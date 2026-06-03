@@ -16,6 +16,8 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectHistoryController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\CompanyController;
+use App\Models\Project;
 
 /*
 |--------------------------------------------------------------------------
@@ -224,5 +226,21 @@ Route::middleware('auth:sanctum')->group(function () {
     */
 
     Route::get('/categories', [CategoryController::class, 'index']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMPANY
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('company')->group(function () {
+
+        Route::get('/company/me', [CompanyController::class, 'myCompany']);
+        Route::put('/company/me', [CompanyController::class, 'updateMyCompany']);
+
+        Route::get('/company/projects', [CompanyController::class, 'myProjects']);
+
+        Route::post('/company/projects', [ProjectController::class, 'store']);
+    });
+
 
 });

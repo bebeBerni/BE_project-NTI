@@ -10,9 +10,15 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeMail;
+use App\Services\EmailService;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private EmailService $emailService
+    ) {}
 
 
 
@@ -44,7 +50,9 @@ class AuthController extends Controller
             $user->roles()->attach($role->id);
         }
 
+        $this->emailService->sendWelcomeEmail($user);
         $token = $user->createToken('auth_token')->plainTextToken;
+
 
         return response()->json([
             'user' => $user->load('roles'),
