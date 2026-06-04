@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ProjectApplication;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-
+use App\Services\EmailService;
+use App\Models\User;
 class ProjectApplicationController extends Controller
 {
     /**
@@ -30,13 +31,13 @@ public function __construct()
     /**
      * Store a newly created project application
      */
-public function store(Request $request)
+public function store(Request $request,EmailService $emailService)
 {
     $validated = $request->validate([
         'project_id' => 'required|exists:projects,id',
         'team_id' => 'required|exists:teams,id',
         'category_id' => 'required|exists:categories,id',
-        'status' => 'required|string|max:45',
+        'status' => 'sometimes|string|max:45',
         'motivation' => 'nullable|string',
         'note' => 'nullable|string',
         'applied_at' => 'nullable|date',
@@ -46,6 +47,16 @@ public function store(Request $request)
     $validated['status'] = 'pending';
 
     $projectApplication = ProjectApplication::create($validated);
+
+    $projectApplication->load([
+        'project',
+        'team',
+        'category'
+    ]);
+    $emailService->sendApplicationSubmittedEmail(
+        auth()->user(),
+        $projectApplication
+    );
 
     return response()->json([
         'message' => 'Project application created successfully',
@@ -74,9 +85,17 @@ public function store(Request $request)
     /**
      * Update project application
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id,EmailService $emailService)
     {
         $projectApplication = ProjectApplication::find($id);
+
+        if (!$projectApplication) {
+            return response()->json([
+                'message' => 'Project application not found'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $oldStatus = $projectApplication->status;
 
         if (!$projectApplication) {
             return response()->json([
@@ -95,6 +114,29 @@ public function store(Request $request)
         ]);
 
         $projectApplication->update($validated);
+        $newStatus = $projectApplication->status;
+        if ($oldStatus !== $newStatus) {
+
+            $user = User::find(
+                $projectApplication->submitted_by_user_id
+            );
+
+            if ($user) {
+
+                $projectApplication->load([
+                    'project',
+                    'team',
+                    'category'
+                ]);
+
+                $emailService->sendApplicationStatusChangedEmail(
+                    $user,
+                    $projectApplication,
+                    $oldStatus,
+                    $newStatus
+                );
+            }
+        }
 
         return response()->json([
             'message' => 'Project application updated successfully',

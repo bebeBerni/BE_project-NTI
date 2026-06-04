@@ -1,31 +1,28 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-</head>
-<body>
+@if($role === 'student')
 
-<h2>
-    Welcome {{ $user->first_name }} {{ $user->last_name }}!
-</h2>
+    <p>
+        Welcome as a student.
+        You can now join teams and apply for projects.
+    </p>
 
-<p>
-    Your account has been successfully created in the NTI Project Management System.
-</p>
+@elseif($role === 'mentor')
 
-<p>
-    You can now log in and start using the platform.
-</p>
+    <p>
+        Welcome as a mentor.
+        You can mentor teams and participate in evaluations.
+    </p>
 
-<p>
-    Role: {{ $user->roles->pluck('name')->join(', ') }}
-</p>
+@elseif($role === 'company')
 
-<br>
+    <p>
+        Welcome as a company representative.
+        You can create projects and collaborate with students.
+    </p>
 
-<p>
-    NTI Project System
-</p>
+@elseif($role === 'admin')
 
-</body>
-</html>
+    <p>
+        Welcome to the administration panel.
+    </p>
+
+@endif

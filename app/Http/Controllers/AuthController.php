@@ -51,7 +51,7 @@ class AuthController extends Controller
             $user->roles()->attach($role->id);
         }
 
-        $this->emailService->sendWelcomeEmail($user);
+        $this->emailService->sendWelcomeEmail($user,);
         $user->sendEmailVerificationNotification();
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -65,7 +65,7 @@ class AuthController extends Controller
     // --------------------
     // STUDENT REGISTRATION
     // --------------------
-    public function registerStudent(Request $request)
+    public function registerStudent(Request $request, EmailService $emailService)
     {
         $validated = $request->validate([
             'first_name'    => ['required', 'string', 'max:255'],
@@ -103,6 +103,11 @@ class AuthController extends Controller
             'is_ukf_verified' => false,
         ]);
 
+        $emailService->sendWelcomeEmail(
+            $user,
+            'student'
+        );
+        $user->sendEmailVerificationNotification();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -114,7 +119,7 @@ class AuthController extends Controller
     // --------------------
     // MENTOR REGISTRATION
     // --------------------
-    public function registerMentor(Request $request)
+    public function registerMentor(Request $request,EmailService $emailService)
     {
         $validated = $request->validate([
             'first_name'    => ['required', 'string', 'max:255'],
@@ -147,6 +152,11 @@ class AuthController extends Controller
             'bio'            => $validated['bio'] ?? null,
         ]);
 
+        $emailService->sendWelcomeEmail(
+            $user,
+            'mentor'
+        );
+        $user->sendEmailVerificationNotification();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -158,7 +168,7 @@ class AuthController extends Controller
     // --------------------
     // COMPANY REGISTRATION
     // --------------------
-    public function registerCompany(Request $request)
+    public function registerCompany(Request $request,EmailService $emailService)
     {
         $validated = $request->validate([
             'first_name'   => ['required', 'string', 'max:255'],
@@ -198,7 +208,11 @@ class AuthController extends Controller
 
         // Add user to company as admin
         $user->companies()->attach($company->id, ['role_in_company' => 'admin']);
-
+        $emailService->sendWelcomeEmail(
+            $user,
+            'company'
+        );
+        $user->sendEmailVerificationNotification();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

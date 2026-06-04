@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mentor;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Team;
@@ -88,7 +89,7 @@ if ($request->filled('search')) {
         ]);
     }
 
-    public function assignToTeam($teamId, Request $request)
+    public function assignToTeam($teamId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
 
@@ -112,6 +113,23 @@ if ($request->filled('search')) {
             'assigned_at' => now(),
             'active' => true,
         ]);
+
+        $team->load('teamMembers.student.user');
+        $mentor->load('user');
+
+        foreach ($team->teamMembers as $member) {
+
+            $user = $member->student?->user;
+
+            if ($user) {
+
+                $emailService->sendMentorAssignedEmail(
+                    $user,
+                    $team,
+                    $mentor
+                );
+            }
+        }
 
         return response()->json([
             'message' => 'Mentor was assigned to the team successfully.',

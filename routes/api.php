@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
+use App\Models\Mentor;
+use App\Models\Team;
 use App\Models\User;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -308,3 +311,22 @@ Route::get('/reset-password/{token}', function ($token, Request $request) {
         'full_url' => $request->fullUrl(),
     ]);
 })->name('password.reset');
+
+Route::get('/test-mentor-email', function (EmailService $emailService) {
+
+    $team = Team::first();
+    $mentor = Mentor::first();
+
+    $user = \App\Models\User::where(
+        'email',
+        'backendtestnti@gmail.com'
+    )->first();
+
+    $emailService->sendMentorAssignedEmail(
+        $user,
+        $team,
+        $mentor
+    );
+
+    return 'Mentor email sent';
+});
