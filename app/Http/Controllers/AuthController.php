@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
 use App\Services\EmailService;
 
+
 class AuthController extends Controller
 {
     public function __construct(
@@ -51,6 +52,7 @@ class AuthController extends Controller
         }
 
         $this->emailService->sendWelcomeEmail($user);
+        $user->sendEmailVerificationNotification();
         $token = $user->createToken('auth_token')->plainTextToken;
 
 
@@ -210,7 +212,10 @@ class AuthController extends Controller
     // --------------------
 
 
-    public function login(Request $request)
+    public function login(
+        Request $request,
+        EmailService $emailService
+    )
     {
         $validated = $request->validate([
             'email'    => ['required', 'email'],
@@ -224,6 +229,13 @@ class AuthController extends Controller
                 'email' => ['Hibás email vagy jelszó.'],
             ]);
         }
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Please verify your email first.'
+            ], 403);
+        }
+
+        $emailService->sendLoginNotification($user);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -280,7 +292,7 @@ public function login(Request $request)
     // --------------------
     // CHANGE PASSWORD (FIXED)
     // --------------------
-    public function changePassword(Request $request)
+    public function changePassword(Request $request,EmailService $emailService)
     {
         $request->validate([
             'current_password' => ['required'],
@@ -300,6 +312,7 @@ public function login(Request $request)
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
+        $emailService->sendPasswordChangedEmail($user);
 
         return response()->json([
             'message' => 'Password changed successfully'

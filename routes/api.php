@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,8 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\CompanyController;
 use App\Models\Project;
+use Illuminate\Auth\Events\Verified;
+use App\Http\Controllers\PasswordResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -243,4 +246,65 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 
+
 });
+Route::get('/email/verify/{id}/{hash}', function (
+    Request $request,
+            $id,
+            $hash
+) {
+
+    $user = User::findOrFail($id);
+
+    if (! hash_equals(
+        (string) $hash,
+        sha1($user->getEmailForVerification())
+    )) {
+        abort(403);
+    }
+
+    if (! $user->hasVerifiedEmail()) {
+
+        $user->markEmailAsVerified();
+
+        event(new Verified($user));
+    }
+
+    return response()->json([
+        'message' => 'Email verified successfully'
+    ]);
+})->middleware('signed')->name('verification.verify');
+
+
+
+
+Route::post('/email/verification-notification',
+    function (Request $request) {
+
+        $request->user()
+            ->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Verification link sent.'
+        ]);
+    }
+)->middleware('auth:sanctum');
+
+Route::post('/forgot-password', [
+    PasswordResetController::class,
+    'forgotPassword'
+]);
+
+Route::post('/reset-password', [
+    PasswordResetController::class,
+    'resetPassword'
+]);
+
+Route::get('/reset-password/{token}', function ($token, Request $request) {
+    return response()->json([
+        'route_working' => true,
+        'token' => $token,
+        'email' => $request->query('email'),
+        'full_url' => $request->fullUrl(),
+    ]);
+})->name('password.reset');
