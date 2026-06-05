@@ -3,14 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectApplication;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use App\Services\EmailService;
 
 
 
 class ProjectController extends Controller
 {
+    public function __construct(
+        EmailService $emailService
+    ) {
+        $this->emailService = $emailService;
+    }
     /**
      * Display a listing of projects
      */
@@ -148,28 +156,62 @@ public function show(Project $project)
         ], Response::HTTP_OK);
     }
 */
-public function update(Request $request, Project $project)
-{
-    $validated = $request->validate([
-        'title' => 'sometimes|string|max:45',
-        'description' => 'sometimes|string',
-        'type' => 'sometimes|string|max:45',
-        'company_id' => 'nullable|exists:companies,id',
-        'team_id' => 'nullable|exists:teams,id',
-        'budget' => 'sometimes|numeric|min:0',
-        'status' => ['sometimes', Rule::in([
-            'pending','active','paused','finished','archived',
-        ])],
-        'deadline' => 'nullable|date',
-    ]);
+    public function update(Request $request, Project $project)
+    {
+        $oldStatus = $project->status;
 
-    $project->update($validated);
+        $validated = $request->validate([
+            'title' => 'sometimes|string|max:45',
+            'description' => 'sometimes|string',
+            'type' => 'sometimes|string|max:45',
+            'company_id' => 'nullable|exists:companies,id',
+            'team_id' => 'nullable|exists:teams,id',
+            'budget' => 'sometimes|numeric|min:0',
+            'status' => ['sometimes', Rule::in([
+                'pending',
+                'active',
+                'paused',
+                'finished',
+                'archived',
+            ])],
+            'deadline' => 'nullable|date',
+        ]);
 
-    return response()->json([
-        'message' => 'Project updated successfully',
-        'project' => $project
-    ]);
-}
+        $project->update($validated);
+
+        $newStatus = $project->status;
+
+        if (
+            $oldStatus !== $newStatus &&
+            in_array($newStatus, ['finished', 'archived'])
+        ) {
+
+            $applications = ProjectApplication::where(
+                'project_id',
+                $project->id
+            )->get();
+
+            foreach ($applications as $application) {
+
+                $user = User::find(
+                    $application->submitted_by_user_id
+                );
+
+                if ($user) {
+
+                    $this->emailService->sendProjectClosedEmail(
+                        $user,
+                        $project
+                    );
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => 'Project updated successfully',
+            'project' => $project
+        ]);
+    }
     /**
      * Delete project
      */

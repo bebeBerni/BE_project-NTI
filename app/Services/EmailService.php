@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ProjectClosedMail;
 use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -10,9 +11,11 @@ use App\Mail\PasswordChangedMail;
 use App\Models\ProjectApplication;
 use App\Mail\ApplicationSubmittedMail;
 use App\Mail\ApplicationStatusChangedMail;
+use App\Mail\DeadlineReminderMail;
 use App\Mail\MentorAssignedMail;
 use App\Models\Team;
 use App\Models\Mentor;
+use App\Models\Project;
 
 class EmailService
 {
@@ -82,6 +85,35 @@ class EmailService
                     $user,
                     $team,
                     $mentor
+                )
+            );
+    }
+    public function sendDeadlineReminderEmail(
+        User $user,
+        Project $project,
+        int $daysRemaining
+    ): void
+    {
+        Mail::to($user->email)
+            ->queue(
+                new DeadlineReminderMail(
+                    $user,
+                    $project,
+                    $daysRemaining
+                )
+            );
+    }
+
+    public function sendProjectClosedEmail(
+        User $user,
+        Project $project
+    ): void
+    {
+        Mail::to($user->email)
+            ->queue(
+                new ProjectClosedMail(
+                    $user,
+                    $project
                 )
             );
     }

@@ -35,8 +35,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/register/student', [AuthController::class, 'registerStudent']);
 Route::post('/register/mentor', [AuthController::class, 'registerMentor']);
 Route::post('/register/company', [AuthController::class, 'registerCompany']);
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 Route::get('/mentors', [MentorController::class, 'index']);
 
@@ -46,7 +45,8 @@ Route::get('/teams/{team}', [TeamController::class, 'show']);
 Route::get('/projects', [ProjectController::class, 'index']);
 Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
-Route::apiResource('project-histories', ProjectHistoryController::class);
+
+
 
 Route::get('/ping-db', function () {
     return response()->json([
@@ -54,7 +54,6 @@ Route::get('/ping-db', function () {
     ]);
 });
 
-Route::post('/change-password', [AuthController::class, 'changePassword']);
 
 Route::post('/debug', function (Request $request) {
     return response()->json([
@@ -72,7 +71,6 @@ Route::post('/debug', function (Request $request) {
 */
 
 Route::middleware('auth:sanctum')->group(function () {
-
     /*
     |--------------------------------------------------------------------------
     | AUTH
@@ -88,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::apiResource('project-histories', ProjectHistoryController::class);
 
 
     /*
@@ -127,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('project-assignments', ProjectAssignmentController::class);
         Route::apiResource('students', StudentController::class);
+        Route::put('/projects/{project}', [ProjectController::class, 'update']);
     });
 
 
@@ -251,6 +251,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 });
+
 Route::get('/email/verify/{id}/{hash}', function (
     Request $request,
             $id,
@@ -291,7 +292,7 @@ Route::post('/email/verification-notification',
             'message' => 'Verification link sent.'
         ]);
     }
-)->middleware('auth:sanctum');
+)->middleware('auth:sanctum','throttle:3,1');
 
 Route::post('/forgot-password', [
     PasswordResetController::class,
@@ -312,21 +313,3 @@ Route::get('/reset-password/{token}', function ($token, Request $request) {
     ]);
 })->name('password.reset');
 
-Route::get('/test-mentor-email', function (EmailService $emailService) {
-
-    $team = Team::first();
-    $mentor = Mentor::first();
-
-    $user = \App\Models\User::where(
-        'email',
-        'backendtestnti@gmail.com'
-    )->first();
-
-    $emailService->sendMentorAssignedEmail(
-        $user,
-        $team,
-        $mentor
-    );
-
-    return 'Mentor email sent';
-});
