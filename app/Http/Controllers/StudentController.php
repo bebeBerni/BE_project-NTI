@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProjectAssignment;
-use Illuminate\Http\Request;
-use App\Models\Team;
 use App\Models\Project;
+use App\Models\ProjectApplication;
+use App\Models\ProjectAssignment;
 use App\Models\Student;
+use App\Models\Team;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
@@ -17,7 +19,6 @@ class StudentController extends Controller
         $student = Student::with([
             'user',
             'teams.students.user',
-            'teams.project',
         ])->where('user_id', $user->id)->first();
 
         if (!$student) {
@@ -28,12 +29,26 @@ class StudentController extends Controller
 
         $team = $student->teams->first();
 
+        $project = null;
+
+        if ($team) {
+            $assignment = ProjectAssignment::with([
+                'project.company',
+            ])
+                ->where('team_id', $team->id)
+                ->where('status', 'assigned')
+                ->latest()
+                ->first();
+
+            $project = $assignment ? $assignment->project : null;
+        }
+
         return response()->json([
             'message' => 'Welcome to the student dashboard.',
             'student' => $student,
             'team' => $team,
             'team_members' => $team ? $team->students : [],
-            'project' => $team ? $team->project : null,
+            'project' => $project,
         ]);
     }
 
@@ -69,15 +84,76 @@ class StudentController extends Controller
             'budget' => ['required', 'numeric', 'min:0'],
             'status' => ['nullable', 'in:pending,active,paused,finished,archived'],
             'deadline' => ['nullable', 'date'],
+            'category_id' => ['nullable', 'exists:categories,id'],
         ]);
 
-        $validated['created_by_user_id'] = $request->user()->id;
+        $user = $request->user();
 
-        $project = Project::create($validated);
+        $student = Student::where('user_id', $user->id)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile was not found for this user.'
+            ], 404);
+        }
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'Student is not a member of any team.'
+            ], 400);
+        }
+
+        $categoryId = $validated['category_id'] ?? 1;
+
+        unset($validated['category_id']);
+
+        $result = DB::transaction(function () use ($validated, $user, $team, $categoryId) {
+            $validated['created_by_user_id'] = $user->id;
+            $validated['team_id'] = $validated['team_id'] ?? $team->id;
+            $validated['status'] = $validated['status'] ?? 'pending';
+
+            $project = Project::create($validated);
+
+            $assignment = ProjectAssignment::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'status' => 'assigned',
+                    'assigned_at' => now(),
+                ]
+            );
+
+            $application = ProjectApplication::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'category_id' => $categoryId,
+                    'status' => 'pending',
+                    'motivation' => null,
+                    'note' => null,
+                    'applied_at' => now(),
+                ]
+            );
+
+            return [
+                'project' => $project,
+                'assignment' => $assignment,
+                'application' => $application,
+            ];
+        });
 
         return response()->json([
-            'message' => 'Project was created successfully.',
-            'project' => $project
+            'message' => 'Project was created successfully and team was applied.',
+            'project' => $result['project'],
+            'assignment' => $result['assignment'],
+            'project_application' => $result['application'],
+            'project_application_id' => $result['application']->id,
         ], 201);
     }
 
@@ -103,28 +179,47 @@ class StudentController extends Controller
 
         $project = Project::findOrFail($projectId);
 
-        $exists = ProjectAssignment::where('project_id', $project->id)
-            ->where('team_id', $team->id)
-            ->exists();
+        $categoryId = $request->input('category_id', 1);
 
-        if ($exists) {
-            return response()->json([
-                'message' => 'This team is already assigned to this project.'
-            ], 409);
-        }
+        $result = DB::transaction(function () use ($project, $team, $categoryId) {
+            $assignment = ProjectAssignment::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'status' => 'assigned',
+                    'assigned_at' => now(),
+                ]
+            );
 
-        $assignment = ProjectAssignment::create([
-            'project_id' => $project->id,
-            'team_id' => $team->id,
-            'status' => 'assigned',
-            'assigned_at' => now(),
-        ]);
+            $application = ProjectApplication::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'category_id' => $categoryId,
+                    'status' => 'pending',
+                    'motivation' => null,
+                    'note' => null,
+                    'applied_at' => now(),
+                ]
+            );
+
+            return [
+                'assignment' => $assignment,
+                'application' => $application,
+            ];
+        });
 
         return response()->json([
             'message' => 'Team successfully joined the project.',
             'project' => $project,
             'team' => $team,
-            'assignment' => $assignment
+            'assignment' => $result['assignment'],
+            'project_application' => $result['application'],
+            'project_application_id' => $result['application']->id,
         ], 201);
     }
 
