@@ -243,6 +243,7 @@ class AuthController extends Controller
                 'email' => ['Hibás email vagy jelszó.'],
             ]);
         }
+// check email verification
         if (!$user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email first.'

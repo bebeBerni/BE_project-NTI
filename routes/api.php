@@ -120,6 +120,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
 
         Route::get('/admin/users', [AdminController::class, 'users']);
+        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
+
+Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
         Route::get('/admin/teams', [AdminController::class, 'teams']);
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
@@ -127,6 +130,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('project-assignments', ProjectAssignmentController::class);
         Route::apiResource('students', StudentController::class);
         Route::put('/projects/{project}', [ProjectController::class, 'update']);
+
+
     });
 
 
