@@ -242,7 +242,7 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Hibás email vagy jelszó.'],
+                'email' => ['Incorrect email or password.'],
             ]);
         }
 // check email verification
