@@ -45,22 +45,22 @@ class AuthController extends Controller
             'email'      => $validated['email'],
             'password'   => Hash::make($validated['password']),
             'phone'      => $validated['phone'] ?? null,
+            'email_verified_at' => null,
         ]);
 
-        // default role
         $role = Role::where('name', 'student')->first();
+
         if ($role) {
             $user->roles()->attach($role->id);
         }
 
-        $this->emailService->sendWelcomeEmail($user,);
-        $user->sendEmailVerificationNotification();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $this->emailService->sendWelcomeEmail($user);
 
+        $user->sendEmailVerificationNotification();
 
         return response()->json([
+            'message' => 'Registration successful. Please verify your email before login.',
             'user' => $user->load('roles'),
-            'token' => $token,
         ], 201);
     }
 

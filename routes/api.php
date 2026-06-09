@@ -24,6 +24,7 @@ use App\Http\Controllers\CompanyController;
 use App\Models\Project;
 use Illuminate\Auth\Events\Verified;
 use App\Http\Controllers\PasswordResetController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +47,20 @@ Route::get('/teams/{team}', [TeamController::class, 'show']);
 Route::get('/projects', [ProjectController::class, 'index']);
 Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
+
+Route::get('/email/verify/{id}/{hash}', function ($id, $hash, Request $request) {
+    $user = User::findOrFail($id);
+
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403);
+    }
+
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+    }
+
+    return redirect('http://localhost:5173/email-verified');
+})->middleware(['signed'])->name('verification.verify');
 
 
 
