@@ -92,8 +92,8 @@ class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordC
     {
         return $this->hasMany(CommissionMember::class, 'user_id');
     }
-    public function roles()
-{
+    public function roles(){
+
     return $this->belongsToMany(Role::class, 'role_user');
 }
 public function hasRole($role)

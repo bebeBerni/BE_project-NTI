@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LeaderController;
+use App\Http\Middleware\CommissionMemberOnly;
 use App\Models\Mentor;
 use App\Models\Team;
 use App\Models\User;
@@ -96,7 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', function (Request $request) {
         return response()->json([
-            'user' => $request->user()?->load('roles'),
+            'user' => $request->user()?->load('roles','commissionMembers'),
         ]);
     });
 
@@ -178,6 +179,14 @@ Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
 
             Route::post('/team-requests/{requestId}/reject', [LeaderController::class, 'rejectTeamRequest']);
         });
+
+    Route::middleware(['auth:sanctum', CommissionMemberOnly::class])->group(function () {
+
+        Route::get('/commission/applications', [CommissionController::class, 'applications']);
+        Route::post('/commission/applications/{id}/approve', [CommissionController::class, 'approveApplication']);
+        Route::post('/commission/applications/{id}/reject', [CommissionController::class, 'rejectApplication']);
+
+    });
 
 
 

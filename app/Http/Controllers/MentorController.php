@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommissionMember;
 use App\Models\Mentor;
+use App\Models\ProjectApplication;
 use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -61,11 +63,35 @@ if ($request->filled('search')) {
                 'message' => 'Mentor profile was not found.'
             ], 404);
         }
+        $isCommissionMember = CommissionMember::where(
+            'user_id',
+            $user->id
+        )->exists();
+
+        $applications = ProjectApplication::with([
+            'project',
+            'team',
+            'category'
+        ])
+            ->whereHas('project.decisions', function ($query) use ($user) {
+
+                $commissionIds = CommissionMember::where(
+                    'user_id',
+                    $user->id
+                )->pluck('commission_id');
+
+                $query->whereIn(
+                    'commission_id',
+                    $commissionIds
+                );
+            })
+            ->where('status', 'pending')
+            ->get();
 
         return response()->json([
-            'message' => 'Welcome to the mentor dashboard.',
-            'user' => $user,
-            'mentor' => $mentor
+            'mentor' => $mentor,
+            'applications' => $applications,
+            'is_commission_member' => $isCommissionMember
         ]);
     }
 
