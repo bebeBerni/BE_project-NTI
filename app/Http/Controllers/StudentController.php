@@ -7,6 +7,7 @@ use App\Models\ProjectApplication;
 use App\Models\ProjectAssignment;
 use App\Models\Student;
 use App\Models\Team;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -157,7 +158,7 @@ class StudentController extends Controller
         ], 201);
     }
 
-    public function joinProject($projectId, Request $request)
+    public function joinProject($projectId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
 
@@ -213,7 +214,10 @@ class StudentController extends Controller
                 'application' => $application,
             ];
         });
-
+        $emailService->sendApplicationSubmittedEmail(
+            $user,
+            $result['application']
+        );
         return response()->json([
             'message' => 'Team successfully joined the project.',
             'project' => $project,
@@ -224,7 +228,7 @@ class StudentController extends Controller
         ], 201);
     }
 
-    public function joinTeam($teamId, Request $request)
+    public function joinTeam($teamId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
 
@@ -248,6 +252,11 @@ class StudentController extends Controller
             'member_role' => 'member',
             'joined_at' => now(),
         ]);
+
+        $emailService->sendTeamJoinedEmail(
+            $user,
+            $team
+        );
 
         return response()->json([
             'message' => 'Successfully joined the team.',

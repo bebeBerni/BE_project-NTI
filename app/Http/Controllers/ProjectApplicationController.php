@@ -45,7 +45,7 @@ public function store(Request $request,EmailService $emailService)
 
     $validated['submitted_by_user_id'] = auth()->id();
     $validated['status'] = 'pending';
-    
+
     $projectApplication = ProjectApplication::create($validated);
 
     $projectApplication->load([
@@ -54,10 +54,7 @@ public function store(Request $request,EmailService $emailService)
         'category'
     ]);
 
-    $emailService->sendApplicationSubmittedEmail(
-        auth()->user(),
-        $projectApplication
-    );
+
 
     return response()->json([
         'message' => 'Project application created successfully',
