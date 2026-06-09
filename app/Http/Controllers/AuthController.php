@@ -9,10 +9,12 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
 use App\Services\EmailService;
+use Psy\Util\Str;
 
 
 class AuthController extends Controller
@@ -332,5 +334,34 @@ public function login(Request $request)
         return response()->json([
             'message' => 'Password changed successfully'
         ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Password was changed successfully.'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Invalid token or email.'
+        ], 400);
     }
 }

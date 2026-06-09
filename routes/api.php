@@ -36,6 +36,7 @@ Route::post('/register/student', [AuthController::class, 'registerStudent']);
 Route::post('/register/mentor', [AuthController::class, 'registerMentor']);
 Route::post('/register/company', [AuthController::class, 'registerCompany']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/mentors', [MentorController::class, 'index']);
 
