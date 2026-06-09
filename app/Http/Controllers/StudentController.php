@@ -181,7 +181,7 @@ class StudentController extends Controller
 
         $categoryId = $request->input('category_id', 1);
 
-        $result = DB::transaction(function () use ($project, $team, $categoryId) {
+        $result = DB::transaction(function () use ($project, $team, $categoryId,$user) {
             $assignment = ProjectAssignment::firstOrCreate(
                 [
                     'project_id' => $project->id,
@@ -200,6 +200,7 @@ class StudentController extends Controller
                 ],
                 [
                     'category_id' => $categoryId,
+                    'submitted_by_user_id' => $user->id,
                     'status' => 'pending',
                     'motivation' => null,
                     'note' => null,
