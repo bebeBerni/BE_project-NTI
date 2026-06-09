@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LeaderController;
 use App\Models\Mentor;
 use App\Models\Team;
 use App\Models\User;
@@ -165,7 +166,18 @@ Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
         Route::post('/student/projects/{project}/join', [StudentController::class, 'joinProject']);
         Route::post('/student/teams/{team}/join', [StudentController::class, 'joinTeam']);
         Route::post('/student/teams', [StudentController::class, 'createTeam']);
+        Route::post('/student/teams/{team}/leave', [StudentController::class, 'leaveTeam']);
     });
+
+    Route::middleware(['auth:sanctum'])
+        ->prefix('leader')
+        ->group(function () {
+            Route::get('/team-requests', [LeaderController::class, 'teamJoinRequests']);
+
+            Route::post('/team-requests/{requestId}/approve', [LeaderController::class, 'approveTeamRequest']);
+
+            Route::post('/team-requests/{requestId}/reject', [LeaderController::class, 'rejectTeamRequest']);
+        });
 
 
 

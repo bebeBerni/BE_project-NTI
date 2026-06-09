@@ -10,6 +10,7 @@ use App\Models\Team;
 use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\TeamJoinRequest;
 
 class StudentController extends Controller
 {
@@ -31,6 +32,7 @@ class StudentController extends Controller
         $team = $student->teams->first();
 
         $project = null;
+        $pendingRequests = [];
 
         if ($team) {
             $assignment = ProjectAssignment::with([
@@ -43,6 +45,25 @@ class StudentController extends Controller
 
             $project = $assignment ? $assignment->project : null;
         }
+        $pendingRequests = collect();
+
+        if ($team) {
+
+            $isLeader = $team->students
+                ->contains(function ($member) use ($student) {
+                    return $member->id === $student->id
+                        && $member->pivot->member_role === 'leader';
+                });
+
+            if ($isLeader) {
+                $pendingRequests = TeamJoinRequest::with([
+                    'student.user'
+                ])
+                    ->where('team_id', $team->id)
+                    ->where('status', 'pending')
+                    ->get();
+            }
+        }
 
         return response()->json([
             'message' => 'Welcome to the student dashboard.',
@@ -50,6 +71,7 @@ class StudentController extends Controller
             'team' => $team,
             'team_members' => $team ? $team->students : [],
             'project' => $project,
+            'pending_team_requests' => $pendingRequests,
         ]);
     }
 
@@ -248,9 +270,21 @@ class StudentController extends Controller
             ], 409);
         }
 
-        $team->students()->attach($student->id, [
-            'member_role' => 'member',
-            'joined_at' => now(),
+        $existingRequest = TeamJoinRequest::where('team_id', $team->id)
+            ->where('student_id', $student->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($existingRequest) {
+            return response()->json([
+                'message' => 'You already have a pending request for this team.'
+            ], 409);
+        }
+
+        $joinRequest = TeamJoinRequest::create([
+            'team_id' => $team->id,
+            'student_id' => $student->id,
+            'status' => 'pending',
         ]);
 
         $emailService->sendTeamJoinedEmail(
@@ -259,9 +293,8 @@ class StudentController extends Controller
         );
 
         return response()->json([
-            'message' => 'Successfully joined the team.',
-            'team' => $team,
-            'student' => $student
+            'message' => 'Join request sent successfully.',
+            'request' => $joinRequest
         ], 201);
     }
 
@@ -297,5 +330,35 @@ class StudentController extends Controller
             'message' => 'Team created successfully.',
             'team' => $team
         ], 201);
+    }
+    public function leaveTeam(Request $request, $teamId)
+    {
+        $user = $request->user();
+
+        $student = Student::where('user_id', $user->id)->firstOrFail();
+
+        $team = Team::findOrFail($teamId);
+
+        $membership = $student->teams()
+            ->where('teams.id', $team->id)
+            ->first();
+
+        if (!$membership) {
+            return response()->json([
+                'message' => 'You are not a member of this team.'
+            ], 400);
+        }
+
+        if ($membership->pivot->member_role === 'leader') {
+            return response()->json([
+                'message' => 'Team leaders cannot leave their team.'
+            ], 403);
+        }
+
+        $student->teams()->detach($team->id);
+
+        return response()->json([
+            'message' => 'Successfully left the team.'
+        ]);
     }
 }

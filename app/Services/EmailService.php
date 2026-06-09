@@ -124,6 +124,6 @@ class EmailService
     ): void
     {
         Mail::to($user->email)
-            ->queue(new TeamJoinedMail($user, $team));
+            ->send(new TeamJoinedMail($user, $team));
     }
 }
