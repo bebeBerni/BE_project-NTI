@@ -51,19 +51,7 @@ Route::get('/projects', [ProjectController::class, 'index']);
 Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
 
-Route::get('/email/verify/{id}/{hash}', function ($id, $hash, Request $request) {
-    $user = User::findOrFail($id);
 
-    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-        abort(403);
-    }
-
-    if (! $user->hasVerifiedEmail()) {
-        $user->markEmailAsVerified();
-    }
-
-    return redirect('http://localhost:5173/email-verified');
-})->middleware(['signed'])->name('verification.verify');
 
 
 
@@ -219,6 +207,7 @@ Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
 
     Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
     Route::post('/teams/{team}/deactivate', [TeamController::class, 'deactivate']);
+    Route::delete('/leader/teams/{team}/members/{student}', [TeamController::class, 'removeMember'])->middleware('auth:sanctum');
 
     /*
     |--------------------------------------------------------------------------
@@ -298,36 +287,6 @@ Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
 
 
 });
-
-Route::get('/email/verify/{id}/{hash}', function (
-    Request $request,
-            $id,
-            $hash
-) {
-
-    $user = User::findOrFail($id);
-
-    if (! hash_equals(
-        (string) $hash,
-        sha1($user->getEmailForVerification())
-    )) {
-        abort(403);
-    }
-
-    if (! $user->hasVerifiedEmail()) {
-
-        $user->markEmailAsVerified();
-
-        event(new Verified($user));
-    }
-
-    return response()->json([
-        'message' => 'Email verified successfully'
-    ]);
-})->middleware('signed')->name('verification.verify');
-
-
-
 
 Route::post('/email/verification-notification',
     function (Request $request) {
