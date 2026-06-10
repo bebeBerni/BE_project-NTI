@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LeaderController;
+use App\Http\Controllers\TeamMessageController;
 use App\Http\Middleware\CommissionMemberOnly;
 use App\Models\Mentor;
 use App\Models\Team;
@@ -105,6 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::apiResource('project-histories', ProjectHistoryController::class);
+
+    Route::get('/teams/{team}/messages', [TeamMessageController::class, 'index']);
+
+    Route::post('/teams/{team}/messages', [TeamMessageController::class, 'store']);
 
 
     /*

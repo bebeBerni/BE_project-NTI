@@ -69,4 +69,11 @@ class Team extends Model
     {
         return $this->hasOne(Project::class);
     }
+
+    public function messages()
+    {
+        return $this->hasMany(
+            TeamMessage::class
+        );
+    }
 }

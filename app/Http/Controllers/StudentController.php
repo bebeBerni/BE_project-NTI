@@ -92,7 +92,10 @@ class StudentController extends Controller
     public function projects()
     {
         return response()->json([
-            'projects' => Project::all()
+            'projects' => Project::where(
+                'status',
+                'pending'
+            )->get()
         ]);
     }
 

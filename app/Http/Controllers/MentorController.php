@@ -89,6 +89,7 @@ if ($request->filled('search')) {
             ->get();
 
         return response()->json([
+            'user' => $user,
             'mentor' => $mentor,
             'applications' => $applications,
             'is_commission_member' => $isCommissionMember
@@ -107,14 +108,18 @@ if ($request->filled('search')) {
             ], 404);
         }
 
-        $teams = $mentor->teams()->get();
+        $teams = $mentor->teams()
+            ->with([
+                'students.user',
+                'projects'
+            ])
+            ->get();
 
         return response()->json([
             'mentor' => $mentor,
             'teams' => $teams
         ]);
     }
-
     public function assignToTeam($teamId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
