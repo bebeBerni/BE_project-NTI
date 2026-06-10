@@ -11,6 +11,7 @@ use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\TeamJoinRequest;
+use App\Models\Document;
 
 class StudentController extends Controller
 {
@@ -22,6 +23,10 @@ class StudentController extends Controller
             'user',
             'teams.students.user',
         ])->where('user_id', $user->id)->first();
+
+        $hasCv = Document::where('user_id', auth()->id())
+            ->where('type', 'cv')
+            ->exists();
 
         if (!$student) {
             return response()->json([
@@ -71,7 +76,9 @@ class StudentController extends Controller
             'team' => $team,
             'team_members' => $team ? $team->students : [],
             'project' => $project,
+            'has_cv' => $hasCv,
             'pending_team_requests' => $pendingRequests,
+
         ]);
     }
 
@@ -101,6 +108,26 @@ class StudentController extends Controller
 
     public function addProject(Request $request)
     {
+        $student = auth()->user()->student;
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'You must be in a team.'
+            ], 403);
+        }
+
+        $isLeader = $team->students()
+            ->where('students.id', $student->id)
+            ->wherePivot('member_role', 'leader')
+            ->exists();
+
+        if (!$isLeader) {
+            return response()->json([
+                'message' => 'Only team leaders can apply for projects.'
+            ], 403);
+        }
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:45'],
             'description' => ['required', 'string'],
@@ -185,6 +212,26 @@ class StudentController extends Controller
 
     public function joinProject($projectId, Request $request,EmailService $emailService)
     {
+        $student = auth()->user()->student;
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'You must be in a team.'
+            ], 403);
+        }
+
+        $isLeader = $team->students()
+            ->where('students.id', $student->id)
+            ->wherePivot('member_role', 'leader')
+            ->exists();
+
+        if (!$isLeader) {
+            return response()->json([
+                'message' => 'Only team leaders can apply for projects.'
+            ], 403);
+        }
         $user = $request->user();
 
         $student = Student::where('user_id', $user->id)->first();
