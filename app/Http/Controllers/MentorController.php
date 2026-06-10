@@ -33,13 +33,13 @@ if ($request->filled('search')) {
 
     $mentors = $query->get()->map(function ($mentor) {
         return [
+            'id' => $mentor->id,
             'user_id' => $mentor->user_id,
             'first_name' => $mentor->user->first_name ?? null,
             'last_name' => $mentor->user->last_name ?? null,
             'email' => $mentor->user->email ?? null,
             'specialization' => $mentor->specialization,
             'phone' => $mentor->user->phone ?? null,
-
         ];
     });
 

@@ -44,6 +44,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/mentors', [MentorController::class, 'index']);
 
+
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
 
@@ -132,8 +133,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/admin/users', [AdminController::class, 'users']);
         Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('/teams/{team}/mentors/{mentor}', [TeamController::class, 'removeMentor']);
+        Route::post('/teams/{team}/assign-mentor', [TeamController::class, 'assignMentor']);
 
-Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
         Route::get('/admin/teams', [AdminController::class, 'teams']);
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);

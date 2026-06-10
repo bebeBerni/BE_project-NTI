@@ -69,6 +69,20 @@ class StudentController extends Controller
                     ->get();
             }
         }
+        $projectApplication = null;
+
+        if ($project) {
+            $projectApplication = ProjectApplication::where(
+                'team_id',
+                $team->id
+            )
+                ->where(
+                    'project_id',
+                    $project->id
+                )
+                ->latest()
+                ->first();
+        }
 
         return response()->json([
             'message' => 'Welcome to the student dashboard.',
@@ -78,7 +92,7 @@ class StudentController extends Controller
             'project' => $project,
             'has_cv' => $hasCv,
             'pending_team_requests' => $pendingRequests,
-
+            'project_application_status' => $projectApplication?->status,
         ]);
     }
 

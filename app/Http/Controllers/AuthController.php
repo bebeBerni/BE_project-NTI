@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Mail;
@@ -104,17 +105,14 @@ class AuthController extends Controller
             'year_of_study'  => $validated['year_of_study'] ?? null,
             'is_ukf_verified' => false,
         ]);
-
         $emailService->sendWelcomeEmail(
             $user,
             'student'
         );
         $user->sendEmailVerificationNotification();
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user->load('roles', 'student'),
-            'token' => $token,
         ], 201);
     }
 
@@ -246,7 +244,7 @@ class AuthController extends Controller
             ]);
         }
 // check email verification
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email first.'
             ], 403);

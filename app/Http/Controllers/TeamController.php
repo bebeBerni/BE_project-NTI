@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Team;
+use App\Models\Mentor;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class TeamController extends Controller
 {
@@ -12,8 +15,8 @@ class TeamController extends Controller
         $teams = Team::with([
             'leader',
             'students',
-            'mentors',
-            'projects'
+            'projects',
+            'mentors.user'
         ])->get();
 
         return response()->json([
@@ -92,6 +95,31 @@ class TeamController extends Controller
 
         return response()->json([
             'message' => 'Member removed successfully.'
+        ]);
+    }
+    public function assignMentor(Request $request, Team $team)
+    {
+        $request->validate([
+            'mentor_id' => 'required|exists:mentors,id'
+        ]);
+
+        $team->mentors()->syncWithoutDetaching([
+            $request->mentor_id => [
+                'assigned_at' => Carbon::now(),
+                'active' => true
+            ]
+        ]);
+
+        return response()->json([
+            'message' => 'Mentor assigned successfully'
+        ]);
+    }
+    public function removeMentor(Team $team, Mentor $mentor)
+    {
+        $team->mentors()->detach($mentor->id);
+
+        return response()->json([
+            'message' => 'Mentor removed'
         ]);
     }
 }
