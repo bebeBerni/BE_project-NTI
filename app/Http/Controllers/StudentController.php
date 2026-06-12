@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProjectAssignment;
-use Illuminate\Http\Request;
-use App\Models\Team;
 use App\Models\Project;
+use App\Models\ProjectApplication;
+use App\Models\ProjectAssignment;
 use App\Models\Student;
+use App\Models\Team;
+use App\Services\EmailService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\TeamJoinRequest;
+use App\Models\Document;
 
 class StudentController extends Controller
 {
@@ -17,8 +22,11 @@ class StudentController extends Controller
         $student = Student::with([
             'user',
             'teams.students.user',
-            'teams.project',
         ])->where('user_id', $user->id)->first();
+
+        $hasCv = Document::where('user_id', auth()->id())
+            ->where('type', 'cv')
+            ->exists();
 
         if (!$student) {
             return response()->json([
@@ -28,12 +36,63 @@ class StudentController extends Controller
 
         $team = $student->teams->first();
 
+        $project = null;
+        $pendingRequests = [];
+
+        if ($team) {
+            $assignment = ProjectAssignment::with([
+                'project.company',
+            ])
+                ->where('team_id', $team->id)
+                ->where('status', 'assigned')
+                ->latest()
+                ->first();
+
+            $project = $assignment ? $assignment->project : null;
+        }
+        $pendingRequests = collect();
+
+        if ($team) {
+
+            $isLeader = $team->students
+                ->contains(function ($member) use ($student) {
+                    return $member->id === $student->id
+                        && $member->pivot->member_role === 'leader';
+                });
+
+            if ($isLeader) {
+                $pendingRequests = TeamJoinRequest::with([
+                    'student.user'
+                ])
+                    ->where('team_id', $team->id)
+                    ->where('status', 'pending')
+                    ->get();
+            }
+        }
+        $projectApplication = null;
+
+        if ($project) {
+            $projectApplication = ProjectApplication::where(
+                'team_id',
+                $team->id
+            )
+                ->where(
+                    'project_id',
+                    $project->id
+                )
+                ->latest()
+                ->first();
+        }
+
         return response()->json([
             'message' => 'Welcome to the student dashboard.',
             'student' => $student,
             'team' => $team,
             'team_members' => $team ? $team->students : [],
-            'project' => $team ? $team->project : null,
+            'project' => $project,
+            'has_cv' => $hasCv,
+            'pending_team_requests' => $pendingRequests,
+            'project_application_status' => $projectApplication?->status,
         ]);
     }
 
@@ -54,12 +113,35 @@ class StudentController extends Controller
     public function projects()
     {
         return response()->json([
-            'projects' => Project::all()
+            'projects' => Project::where(
+                'status',
+                'pending'
+            )->get()
         ]);
     }
 
     public function addProject(Request $request)
     {
+        $student = auth()->user()->student;
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'You must be in a team.'
+            ], 403);
+        }
+
+        $isLeader = $team->students()
+            ->where('students.id', $student->id)
+            ->wherePivot('member_role', 'leader')
+            ->exists();
+
+        if (!$isLeader) {
+            return response()->json([
+                'message' => 'Only team leaders can apply for projects.'
+            ], 403);
+        }
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:45'],
             'description' => ['required', 'string'],
@@ -69,20 +151,101 @@ class StudentController extends Controller
             'budget' => ['required', 'numeric', 'min:0'],
             'status' => ['nullable', 'in:pending,active,paused,finished,archived'],
             'deadline' => ['nullable', 'date'],
+            'category_id' => ['nullable', 'exists:categories,id'],
         ]);
 
-        $validated['created_by_user_id'] = $request->user()->id;
+        $user = $request->user();
 
-        $project = Project::create($validated);
+        $student = Student::where('user_id', $user->id)->first();
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student profile was not found for this user.'
+            ], 404);
+        }
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'Student is not a member of any team.'
+            ], 400);
+        }
+
+        $categoryId = $validated['category_id'] ?? 1;
+
+        unset($validated['category_id']);
+
+        $result = DB::transaction(function () use ($validated, $user, $team, $categoryId) {
+            $validated['created_by_user_id'] = $user->id;
+            $validated['team_id'] = $validated['team_id'] ?? $team->id;
+            $validated['status'] = $validated['status'] ?? 'pending';
+
+            $project = Project::create($validated);
+
+            $assignment = ProjectAssignment::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'status' => 'assigned',
+                    'assigned_at' => now(),
+                ]
+            );
+
+            $application = ProjectApplication::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'category_id' => $categoryId,
+                    'status' => 'pending',
+                    'motivation' => null,
+                    'note' => null,
+                    'applied_at' => now(),
+                ]
+            );
+
+            return [
+                'project' => $project,
+                'assignment' => $assignment,
+                'application' => $application,
+            ];
+        });
 
         return response()->json([
-            'message' => 'Project was created successfully.',
-            'project' => $project
+            'message' => 'Project was created successfully and team was applied.',
+            'project' => $result['project'],
+            'assignment' => $result['assignment'],
+            'project_application' => $result['application'],
+            'project_application_id' => $result['application']->id,
         ], 201);
     }
 
-    public function joinProject($projectId, Request $request)
+    public function joinProject($projectId, Request $request,EmailService $emailService)
     {
+        $student = auth()->user()->student;
+
+        $team = $student->teams()->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'You must be in a team.'
+            ], 403);
+        }
+
+        $isLeader = $team->students()
+            ->where('students.id', $student->id)
+            ->wherePivot('member_role', 'leader')
+            ->exists();
+
+        if (!$isLeader) {
+            return response()->json([
+                'message' => 'Only team leaders can apply for projects.'
+            ], 403);
+        }
         $user = $request->user();
 
         $student = Student::where('user_id', $user->id)->first();
@@ -103,32 +266,55 @@ class StudentController extends Controller
 
         $project = Project::findOrFail($projectId);
 
-        $exists = ProjectAssignment::where('project_id', $project->id)
-            ->where('team_id', $team->id)
-            ->exists();
+        $categoryId = $request->input('category_id', 1);
 
-        if ($exists) {
-            return response()->json([
-                'message' => 'This team is already assigned to this project.'
-            ], 409);
-        }
+        $result = DB::transaction(function () use ($project, $team, $categoryId,$user) {
+            $assignment = ProjectAssignment::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'status' => 'assigned',
+                    'assigned_at' => now(),
+                ]
+            );
 
-        $assignment = ProjectAssignment::create([
-            'project_id' => $project->id,
-            'team_id' => $team->id,
-            'status' => 'assigned',
-            'assigned_at' => now(),
-        ]);
+            $application = ProjectApplication::firstOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'team_id' => $team->id,
+                ],
+                [
+                    'category_id' => $categoryId,
+                    'submitted_by_user_id' => $user->id,
+                    'status' => 'pending',
+                    'motivation' => null,
+                    'note' => null,
+                    'applied_at' => now(),
+                ]
+            );
 
+            return [
+                'assignment' => $assignment,
+                'application' => $application,
+            ];
+        });
+        $emailService->sendApplicationSubmittedEmail(
+            $user,
+            $result['application']
+        );
         return response()->json([
             'message' => 'Team successfully joined the project.',
             'project' => $project,
             'team' => $team,
-            'assignment' => $assignment
+            'assignment' => $result['assignment'],
+            'project_application' => $result['application'],
+            'project_application_id' => $result['application']->id,
         ], 201);
     }
 
-    public function joinTeam($teamId, Request $request)
+    public function joinTeam($teamId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
 
@@ -148,15 +334,31 @@ class StudentController extends Controller
             ], 409);
         }
 
-        $team->students()->attach($student->id, [
-            'member_role' => 'member',
-            'joined_at' => now(),
+        $existingRequest = TeamJoinRequest::where('team_id', $team->id)
+            ->where('student_id', $student->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($existingRequest) {
+            return response()->json([
+                'message' => 'You already have a pending request for this team.'
+            ], 409);
+        }
+
+        $joinRequest = TeamJoinRequest::create([
+            'team_id' => $team->id,
+            'student_id' => $student->id,
+            'status' => 'pending',
         ]);
 
+        $emailService->sendTeamJoinedEmail(
+            $user,
+            $team
+        );
+
         return response()->json([
-            'message' => 'Successfully joined the team.',
-            'team' => $team,
-            'student' => $student
+            'message' => 'Join request sent successfully.',
+            'request' => $joinRequest
         ], 201);
     }
 
@@ -192,5 +394,35 @@ class StudentController extends Controller
             'message' => 'Team created successfully.',
             'team' => $team
         ], 201);
+    }
+    public function leaveTeam(Request $request, $teamId)
+    {
+        $user = $request->user();
+
+        $student = Student::where('user_id', $user->id)->firstOrFail();
+
+        $team = Team::findOrFail($teamId);
+
+        $membership = $student->teams()
+            ->where('teams.id', $team->id)
+            ->first();
+
+        if (!$membership) {
+            return response()->json([
+                'message' => 'You are not a member of this team.'
+            ], 400);
+        }
+
+        if ($membership->pivot->member_role === 'leader') {
+            return response()->json([
+                'message' => 'Team leaders cannot leave their team.'
+            ], 403);
+        }
+
+        $student->teams()->detach($team->id);
+
+        return response()->json([
+            'message' => 'Successfully left the team.'
+        ]);
     }
 }

@@ -69,7 +69,7 @@ public function update(Request $request, $id)
     ]);
 }
 
-    public function destroy($id)
+public function destroy($id)
     {
         $user = User::findOrFail($id);
 

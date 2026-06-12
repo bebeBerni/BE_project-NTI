@@ -4,16 +4,21 @@ namespace App\Models;
 use App\Models\Role;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, CanResetPasswordContract
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable,HasApiTokens;
+    use CanResetPassword;
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'phone',
+        'email_verified_at',
 
     ];
 
@@ -86,8 +92,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(CommissionMember::class, 'user_id');
     }
-    public function roles()
-{
+    public function roles(){
+
     return $this->belongsToMany(Role::class, 'role_user');
 }
 public function hasRole($role)
@@ -100,7 +106,30 @@ public function isRole($role)
 {
     return $this->hasRole($role);
 }
+    public function sendPasswordResetNotification($token): void
+    {
+        $email = urlencode($this->email);
 
+        $url = config('app.frontend_url') . "/reset-password/{$token}?email={$email}";
+
+        $this->notify(new class($url) extends ResetPassword {
+            public function __construct(private string $url)
+            {
+                parent::__construct('');
+            }
+
+            public function toMail($notifiable)
+            {
+                return (new MailMessage)
+                    ->subject('Reset Password Notification')
+                    ->greeting('Hello!')
+                    ->line('You are receiving this email because we received a password reset request for your account.')
+                    ->action('Reset Password', $this->url)
+                    ->line('This password reset link will expire in 60 minutes.')
+                    ->line('If you did not request a password reset, no further action is required.');
+            }
+        });
+    }
 
 
 

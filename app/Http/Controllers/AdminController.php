@@ -169,4 +169,11 @@ public function deleteUser(User $user)
             ])->get()
         ]);
     }
+    public function mentors()
+    {
+        return $this->belongsToMany(
+            Mentor::class,
+            'team_mentors'
+        );
+    }
 }

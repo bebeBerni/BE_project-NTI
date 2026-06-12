@@ -13,6 +13,7 @@ use App\Mail\ApplicationSubmittedMail;
 use App\Mail\ApplicationStatusChangedMail;
 use App\Mail\DeadlineReminderMail;
 use App\Mail\MentorAssignedMail;
+use App\Mail\TeamJoinedMail;
 use App\Models\Team;
 use App\Models\Mentor;
 use App\Models\Project;
@@ -116,5 +117,13 @@ class EmailService
                     $project
                 )
             );
+    }
+    public function sendTeamJoinedEmail(
+        User $user,
+        Team $team
+    ): void
+    {
+        Mail::to($user->email)
+            ->queue(new TeamJoinedMail($user, $team));
     }
 }

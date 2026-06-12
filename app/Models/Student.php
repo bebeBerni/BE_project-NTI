@@ -35,13 +35,13 @@ class Student extends Model
         return $this->hasMany(TeamMember::class);
     }
 
-public function teams()
-{
-    return $this->belongsToMany(
-        Team::class,
-        'team_members',
-        'student_id',
-        'team_id'
-    );
-}
+    public function teams()
+    {
+        return $this->belongsToMany(
+            Team::class,
+            'team_members',
+            'student_id',
+            'team_id'
+        )->withPivot('member_role');
+    }
 }

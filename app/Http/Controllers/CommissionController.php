@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Commission;
 use App\Models\CommissionMember;
+use App\Models\ProjectApplication;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use App\Models\Decision;
+use Illuminate\Support\Facades\DB;
 
 class CommissionController extends Controller
 {
@@ -205,6 +208,119 @@ class CommissionController extends Controller
 
         return response()->json([
             'message' => 'Member removed successfully'
+        ]);
+    }
+
+    public function applications(Request $request)
+    {
+        $commissionIds = CommissionMember::where(
+            'user_id',
+            $request->user()->id
+        )->pluck('commission_id');
+
+        $applications = ProjectApplication::with([
+            'project',
+            'team',
+            'category'
+        ])
+            ->whereHas('project.decisions', function ($query) use ($commissionIds) {
+                $query->whereIn(
+                    'commission_id',
+                    $commissionIds
+                );
+            })
+            ->where('status', 'pending')
+            ->get();
+
+        return response()->json([
+            'applications' => $applications
+        ]);
+    }
+    public function approveApplication(Request $request, $id)
+    {
+        $application = ProjectApplication::with('project')
+            ->findOrFail($id);
+
+        $commissionIds = CommissionMember::where(
+            'user_id',
+            $request->user()->id
+        )->pluck('commission_id');
+
+        $canDecide = Decision::where(
+            'project_id',
+            $application->project_id
+        )
+            ->whereIn(
+                'commission_id',
+                $commissionIds
+            )
+            ->exists();
+
+        if (!$canDecide) {
+            return response()->json([
+                'message' => 'You are not allowed to approve this application.'
+            ], 403);
+        }
+
+        DB::transaction(function () use ($application) {
+
+            $application->update([
+                'status' => 'approved'
+            ]);
+
+            $application->project->update([
+                'team_id' => $application->team_id
+            ]);
+
+            ProjectApplication::where(
+                'project_id',
+                $application->project_id
+            )
+                ->where('id', '!=', $application->id)
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'rejected'
+                ]);
+        });
+
+        return response()->json([
+            'message' => 'Application approved successfully.',
+            'application' => $application
+        ]);
+    }
+    public function rejectApplication(Request $request, $id)
+    {
+        $application = ProjectApplication::with('project')
+            ->findOrFail($id);
+
+        $commissionIds = CommissionMember::where(
+            'user_id',
+            $request->user()->id
+        )->pluck('commission_id');
+
+        $canDecide = Decision::where(
+            'project_id',
+            $application->project_id
+        )
+            ->whereIn(
+                'commission_id',
+                $commissionIds
+            )
+            ->exists();
+
+        if (!$canDecide) {
+            return response()->json([
+                'message' => 'You are not allowed to reject this application.'
+            ], 403);
+        }
+
+        $application->update([
+            'status' => 'rejected'
+        ]);
+
+        return response()->json([
+            'message' => 'Application rejected successfully.',
+            'application' => $application
         ]);
     }
 }

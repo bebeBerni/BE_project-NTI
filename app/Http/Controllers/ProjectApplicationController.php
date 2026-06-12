@@ -53,10 +53,8 @@ public function store(Request $request,EmailService $emailService)
         'team',
         'category'
     ]);
-    $emailService->sendApplicationSubmittedEmail(
-        auth()->user(),
-        $projectApplication
-    );
+
+
 
     return response()->json([
         'message' => 'Project application created successfully',

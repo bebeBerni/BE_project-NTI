@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LeaderController;
+use App\Http\Controllers\TeamMessageController;
+use App\Http\Middleware\CommissionMemberOnly;
 use App\Models\Mentor;
 use App\Models\Team;
 use App\Models\User;
@@ -24,6 +27,7 @@ use App\Http\Controllers\CompanyController;
 use App\Models\Project;
 use Illuminate\Auth\Events\Verified;
 use App\Http\Controllers\PasswordResetController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,14 +40,18 @@ Route::post('/register/student', [AuthController::class, 'registerStudent']);
 Route::post('/register/mentor', [AuthController::class, 'registerMentor']);
 Route::post('/register/company', [AuthController::class, 'registerCompany']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/mentors', [MentorController::class, 'index']);
+
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
 
 Route::get('/projects', [ProjectController::class, 'index']);
 Route::get('/projects/{project}', [ProjectController::class, 'show']);
+
+
 
 
 
@@ -79,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', function (Request $request) {
         return response()->json([
-            'user' => $request->user()?->load('roles'),
+            'user' => $request->user()?->load('roles','commissionMembers'),
         ]);
     });
 
@@ -87,6 +95,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::apiResource('project-histories', ProjectHistoryController::class);
+
+    Route::get('/teams/{team}/messages', [TeamMessageController::class, 'index']);
+
+    Route::post('/teams/{team}/messages', [TeamMessageController::class, 'store']);
 
 
     /*
@@ -121,6 +133,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/admin/users', [AdminController::class, 'users']);
         Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
+        Route::delete('/teams/{team}/mentors/{mentor}', [TeamController::class, 'removeMentor']);
+        Route::post('/teams/{team}/assign-mentor', [TeamController::class, 'assignMentor']);
 
 Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
 Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
@@ -150,6 +164,25 @@ Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
         Route::post('/student/projects/{project}/join', [StudentController::class, 'joinProject']);
         Route::post('/student/teams/{team}/join', [StudentController::class, 'joinTeam']);
         Route::post('/student/teams', [StudentController::class, 'createTeam']);
+        Route::post('/student/teams/{team}/leave', [StudentController::class, 'leaveTeam']);
+    });
+
+    Route::middleware(['auth:sanctum'])
+        ->prefix('leader')
+        ->group(function () {
+            Route::get('/team-requests', [LeaderController::class, 'teamJoinRequests']);
+
+            Route::post('/team-requests/{requestId}/approve', [LeaderController::class, 'approveTeamRequest']);
+
+            Route::post('/team-requests/{requestId}/reject', [LeaderController::class, 'rejectTeamRequest']);
+        });
+
+    Route::middleware(['auth:sanctum', CommissionMemberOnly::class])->group(function () {
+
+        Route::get('/commission/applications', [CommissionController::class, 'applications']);
+        Route::post('/commission/applications/{id}/approve', [CommissionController::class, 'approveApplication']);
+        Route::post('/commission/applications/{id}/reject', [CommissionController::class, 'rejectApplication']);
+
     });
 
 
@@ -178,6 +211,7 @@ Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
 
     Route::post('/teams/{team}/activate', [TeamController::class, 'activate']);
     Route::post('/teams/{team}/deactivate', [TeamController::class, 'deactivate']);
+    Route::delete('/leader/teams/{team}/members/{student}', [TeamController::class, 'removeMember'])->middleware('auth:sanctum');
 
     /*
     |--------------------------------------------------------------------------
@@ -257,36 +291,6 @@ Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
 
 
 });
-
-Route::get('/email/verify/{id}/{hash}', function (
-    Request $request,
-            $id,
-            $hash
-) {
-
-    $user = User::findOrFail($id);
-
-    if (! hash_equals(
-        (string) $hash,
-        sha1($user->getEmailForVerification())
-    )) {
-        abort(403);
-    }
-
-    if (! $user->hasVerifiedEmail()) {
-
-        $user->markEmailAsVerified();
-
-        event(new Verified($user));
-    }
-
-    return response()->json([
-        'message' => 'Email verified successfully'
-    ]);
-})->middleware('signed')->name('verification.verify');
-
-
-
 
 Route::post('/email/verification-notification',
     function (Request $request) {

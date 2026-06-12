@@ -9,10 +9,13 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
 use App\Services\EmailService;
+use Psy\Util\Str;
 
 
 class AuthController extends Controller
@@ -43,22 +46,22 @@ class AuthController extends Controller
             'email'      => $validated['email'],
             'password'   => Hash::make($validated['password']),
             'phone'      => $validated['phone'] ?? null,
+            'email_verified_at' => null,
         ]);
 
-        // default role
         $role = Role::where('name', 'student')->first();
+
         if ($role) {
             $user->roles()->attach($role->id);
         }
 
-        $this->emailService->sendWelcomeEmail($user,);
-        $user->sendEmailVerificationNotification();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $this->emailService->sendWelcomeEmail($user);
 
+        $user->sendEmailVerificationNotification();
 
         return response()->json([
+            'message' => 'Registration successful. Please verify your email before login.',
             'user' => $user->load('roles'),
-            'token' => $token,
         ], 201);
     }
 
@@ -102,17 +105,14 @@ class AuthController extends Controller
             'year_of_study'  => $validated['year_of_study'] ?? null,
             'is_ukf_verified' => false,
         ]);
-
         $emailService->sendWelcomeEmail(
             $user,
             'student'
         );
         $user->sendEmailVerificationNotification();
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user->load('roles', 'student'),
-            'token' => $token,
         ], 201);
     }
 
@@ -240,11 +240,11 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Hibás email vagy jelszó.'],
+                'email' => ['Incorrect email or password.'],
             ]);
         }
 // check email verification
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email first.'
             ], 403);
@@ -332,5 +332,34 @@ public function login(Request $request)
         return response()->json([
             'message' => 'Password changed successfully'
         ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Password was changed successfully.'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Invalid token or email.'
+        ], 400);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
 {
@@ -23,6 +24,10 @@ class Team extends Model
     public function teamMembers()
     {
         return $this->hasMany(TeamMember::class);
+    }
+    public function teamJoinRequests(): HasMany
+    {
+        return $this->hasMany(TeamJoinRequest::class);
     }
 
 
@@ -63,5 +68,12 @@ class Team extends Model
     public function project()
     {
         return $this->hasOne(Project::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(
+            TeamMessage::class
+        );
     }
 }
