@@ -71,7 +71,7 @@ Route::post('/debug', function (Request $request) {
     ]);
 });
 
-
+Route::apiResource('project-histories', ProjectHistoryController::class);
 /*
 |--------------------------------------------------------------------------
 | AUTHENTICATED ROUTES
@@ -94,7 +94,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
-    Route::apiResource('project-histories', ProjectHistoryController::class);
 
     Route::get('/teams/{team}/messages', [TeamMessageController::class, 'index']);
 
