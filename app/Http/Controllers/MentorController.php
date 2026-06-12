@@ -37,6 +37,7 @@ if ($request->filled('search')) {
             'email' => $mentor->user->email ?? null,
             'specialization' => $mentor->specialization,
             'phone' => $mentor->user->phone ?? null,
+             'bio' => $mentor->bio,
 
         ];
     });
@@ -69,6 +70,7 @@ if ($request->filled('search')) {
         ]);
     }
 
+    //MANAGE TEAMS
     public function managedTeams(Request $request)
     {
         $user = $request->user();
@@ -89,6 +91,10 @@ if ($request->filled('search')) {
         ]);
     }
 
+
+
+
+    //ASSIGN MENTOR TO TEAM
     public function assignToTeam($teamId, Request $request,EmailService $emailService)
     {
         $user = $request->user();
@@ -138,6 +144,8 @@ if ($request->filled('search')) {
         ], 201);
     }
 
+
+    //ADD STUDENT TO TEAM
     public function addStudentToTeam($teamId, $studentId, Request $request)
     {
         $user = $request->user();
@@ -177,6 +185,8 @@ if ($request->filled('search')) {
         ], 201);
     }
 
+
+    //REMOVE STUDENT FROM TEAM
     public function removeStudentFromTeam($teamId, $studentId, Request $request)
     {
         $user = $request->user();

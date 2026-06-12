@@ -98,6 +98,37 @@ public function updateUser(Request $request, User $user)
     ]);
 }
 
+public function updateMentor(Request $request, User $user)
+{
+    $validated = $request->validate([
+        'first_name' => 'required|string',
+        'last_name' => 'required|string',
+        'email' => 'required|email',
+        'phone' => 'nullable|string',
+        'specialization' => 'nullable|string',
+        'bio' => 'nullable|string',
+    ]);
+
+    $user->update([
+        'first_name' => $validated['first_name'],
+        'last_name' => $validated['last_name'],
+        'email' => $validated['email'],
+        'phone' => $validated['phone'],
+    ]);
+
+    $mentor = Mentor::where('user_id', $user->id)->first();
+
+    if ($mentor) {
+        $mentor->update([
+            'specialization' => $validated['specialization'],
+            'bio' => $validated['bio'] ?? $mentor->bio,
+        ]);
+    }
+
+    return response()->json([
+        'message' => 'Mentor updated successfully'
+    ]);
+}
 public function deleteUser(User $user)
 {
     Student::where('user_id', $user->id)->delete();

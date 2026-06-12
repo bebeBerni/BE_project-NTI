@@ -123,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
 
 Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
         Route::get('/admin/teams', [AdminController::class, 'teams']);
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
