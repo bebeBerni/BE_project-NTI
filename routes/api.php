@@ -151,6 +151,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/commissions/{commission}/members', [CommissionController::class, 'addMember']);
         Route::delete('/admin/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
 
+        Route::post('/admin/projects/{project}/assign-commission', [ProjectController::class, 'assignCommission']);
+        Route::get(
+            '/projects/{project}/assigned-commission',
+            [ProjectController::class, 'assignedCommission']
+        );
 
     });
 

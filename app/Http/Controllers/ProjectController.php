@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Decision;
 use App\Models\Project;
 use App\Models\ProjectApplication;
 use App\Models\User;
@@ -245,6 +246,39 @@ public function destroy(Project $project)
         'message' => 'Project deleted successfully'
     ]);
 }
+
+    public function assignCommission(Request $request, Project $project)
+    {
+        $request->validate([
+            'commission_id' => 'required|exists:commissions,id',
+        ]);
+
+        Decision::updateOrCreate(
+            [
+                'project_id' => $project->id,
+            ],
+            [
+                'commission_id' => $request->commission_id,
+                'status' => 'pending',
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Commission assigned successfully',
+            'project' => $project->load('decisions')
+        ]);
+    }
+
+    public function assignedCommission(Project $project)
+    {
+        $decision = Decision::with('commission')
+            ->where('project_id', $project->id)
+            ->first();
+
+        return response()->json([
+            'commission' => $decision?->commission
+        ]);
+    }
 
 
 
