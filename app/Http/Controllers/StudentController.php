@@ -37,7 +37,14 @@ class StudentController extends Controller
         $team = $student->teams->first();
 
         $project = null;
-        $pendingRequests = [];
+        $projectApplications = [];
+
+        if ($team) {
+            $projectApplications = ProjectApplication::with('project')
+                ->where('team_id', $team->id)
+                ->latest()
+                ->get();
+        }
 
         if ($team) {
             $assignment = ProjectAssignment::with([
@@ -90,6 +97,7 @@ class StudentController extends Controller
             'team' => $team,
             'team_members' => $team ? $team->students : [],
             'project' => $project,
+            'project_applications' => $projectApplications,
             'has_cv' => $hasCv,
             'pending_team_requests' => $pendingRequests,
             'project_application_status' => $projectApplication?->status,
