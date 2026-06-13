@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Commission;
 use App\Models\CommissionMember;
 use App\Models\ProjectApplication;
+use App\Models\ProjectAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
@@ -272,9 +273,16 @@ class CommissionController extends Controller
                 'team_id' => $application->team_id
             ]);
 
+            ProjectAssignment::create([
+                'project_id' => $application->project_id,
+                'team_id' => $application->team_id,
+                'status' => 'assigned',
+                'assigned_at' => now(),
+            ]);
+
             ProjectApplication::where(
-                'project_id',
-                $application->project_id
+                'team_id',
+                $application->team_id
             )
                 ->where('id', '!=', $application->id)
                 ->where('status', 'pending')

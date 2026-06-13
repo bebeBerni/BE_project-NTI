@@ -139,7 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
         Route::get('/admin/commissions', [CommissionController::class, 'index']);
-        
+
 
         Route::apiResource('project-assignments', ProjectAssignmentController::class);
         Route::apiResource('students', StudentController::class);

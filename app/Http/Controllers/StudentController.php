@@ -110,13 +110,26 @@ class StudentController extends Controller
         ]);
     }
 
-    public function projects()
+    public function projects(Request $request)
     {
+        $student = $request->user()->student;
+        $team = $student->teams()->first();
+
+        $appliedProjectIds = [];
+
+        if ($team) {
+            $appliedProjectIds = ProjectApplication::where(
+                'team_id',
+                $team->id
+            )->pluck('project_id');
+        }
+
+        $projects = Project::where('status', 'pending')
+            ->whereNotIn('id', $appliedProjectIds)
+            ->get();
+
         return response()->json([
-            'projects' => Project::where(
-                'status',
-                'pending'
-            )->get()
+            'projects' => $projects
         ]);
     }
 
@@ -263,40 +276,50 @@ class StudentController extends Controller
                 'message' => 'Student is not a member of any team.'
             ], 400);
         }
+        $hasApprovedApplication = ProjectApplication::where(
+            'team_id',
+            $team->id
+        )
+            ->where('status', 'approved')
+            ->exists();
+
+        if ($hasApprovedApplication) {
+            return response()->json([
+                'message' => 'Your team already has an approved project.'
+            ], 422);
+        }
+
 
         $project = Project::findOrFail($projectId);
+
+        $existingApplication = ProjectApplication::where(
+            'team_id',
+            $team->id
+        )
+            ->where('project_id', $project->id)
+            ->exists();
+
+        if ($existingApplication) {
+            return response()->json([
+                'message' => 'Your team has already applied for this project.'
+            ], 422);
+        }
 
         $categoryId = $request->input('category_id', 1);
 
         $result = DB::transaction(function () use ($project, $team, $categoryId,$user) {
-            $assignment = ProjectAssignment::firstOrCreate(
-                [
-                    'project_id' => $project->id,
-                    'team_id' => $team->id,
-                ],
-                [
-                    'status' => 'assigned',
-                    'assigned_at' => now(),
-                ]
-            );
-
-            $application = ProjectApplication::firstOrCreate(
-                [
-                    'project_id' => $project->id,
-                    'team_id' => $team->id,
-                ],
-                [
-                    'category_id' => $categoryId,
-                    'submitted_by_user_id' => $user->id,
-                    'status' => 'pending',
-                    'motivation' => null,
-                    'note' => null,
-                    'applied_at' => now(),
-                ]
-            );
+            $application = ProjectApplication::create([
+                'project_id' => $project->id,
+                'team_id' => $team->id,
+                'category_id' => $categoryId,
+                'submitted_by_user_id' => $user->id,
+                'status' => 'pending',
+                'motivation' => null,
+                'note' => null,
+                'applied_at' => now(),
+            ]);
 
             return [
-                'assignment' => $assignment,
                 'application' => $application,
             ];
         });
@@ -308,7 +331,6 @@ class StudentController extends Controller
             'message' => 'Team successfully joined the project.',
             'project' => $project,
             'team' => $team,
-            'assignment' => $result['assignment'],
             'project_application' => $result['application'],
             'project_application_id' => $result['application']->id,
         ], 201);
