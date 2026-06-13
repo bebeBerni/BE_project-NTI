@@ -222,9 +222,10 @@ class StudentController extends Controller
                 ],
                 [
                     'category_id' => $categoryId,
+                    'submitted_by_user_id' => $user->id,
                     'status' => 'pending',
-                    'motivation' => null,
-                    'note' => null,
+                    'motivation' => $validated['motivation'] ?? null,
+                    'note' => $validated['note'] ?? null,
                     'applied_at' => now(),
                 ]
             );
