@@ -145,6 +145,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('students', StudentController::class);
         Route::put('/projects/{project}', [ProjectController::class, 'update']);
 
+        Route::get('/admin/commissions', [CommissionController::class, 'index']);
+
+        Route::get('/admin/commissions/{commission}/members', [CommissionController::class, 'members']);
+        Route::post('/admin/commissions/{commission}/members', [CommissionController::class, 'addMember']);
+        Route::delete('/admin/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
+
 
     });
 
@@ -248,11 +254,11 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource('commissions', CommissionController::class);
+    //Route::apiResource('commissions', CommissionController::class);
 
-    Route::get('/commissions/{commission}/members', [CommissionController::class, 'members']);
-    Route::post('/commissions/{commission}/members', [CommissionController::class, 'addMember']);
-    Route::delete('/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
+    //Route::get('/commissions/{commission}/members', [CommissionController::class, 'members']);
+    //Route::post('/commissions/{commission}/members', [CommissionController::class, 'addMember']);
+    //Route::delete('/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
 
 
     /*
