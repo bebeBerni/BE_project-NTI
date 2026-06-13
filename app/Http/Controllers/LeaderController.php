@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\TeamJoinRequest;
+use App\Services\EmailService;
 
 class LeaderController extends Controller
 {
+    public function __construct(
+        private EmailService $emailService
+    ) {}
     public function teamJoinRequests(Request $request)
     {
         $user = $request->user();
@@ -44,7 +48,8 @@ class LeaderController extends Controller
     }
     public function approveTeamRequest(
         Request $request,
-                $requestId
+                $requestId,
+        EmailService $emailService
     )
     {
         $user = $request->user();
@@ -94,6 +99,10 @@ class LeaderController extends Controller
         $joinRequest->update([
             'status' => 'approved'
         ]);
+        $this->emailService->sendTeamJoinedEmail(
+            $student->user,
+            $leaderTeam
+        );
 
         return response()->json([
             'message' => 'Student approved successfully.'

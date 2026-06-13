@@ -345,7 +345,7 @@ class StudentController extends Controller
         ], 201);
     }
 
-    public function joinTeam($teamId, Request $request,EmailService $emailService)
+    public function joinTeam($teamId, Request $request)
     {
         $user = $request->user();
 
@@ -381,11 +381,6 @@ class StudentController extends Controller
             'student_id' => $student->id,
             'status' => 'pending',
         ]);
-
-        $emailService->sendTeamJoinedEmail(
-            $user,
-            $team
-        );
 
         return response()->json([
             'message' => 'Join request sent successfully.',

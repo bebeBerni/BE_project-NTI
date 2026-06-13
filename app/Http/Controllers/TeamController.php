@@ -7,6 +7,7 @@ use App\Models\Team;
 use App\Models\Mentor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Services\EmailService;
 
 class TeamController extends Controller
 {
@@ -97,8 +98,11 @@ class TeamController extends Controller
             'message' => 'Member removed successfully.'
         ]);
     }
-    public function assignMentor(Request $request, Team $team)
-    {
+    public function assignMentor(
+        Request $request,
+        Team $team,
+        EmailService $emailService
+    ) {
         $request->validate([
             'mentor_id' => 'required|exists:mentors,id'
         ]);
@@ -109,6 +113,19 @@ class TeamController extends Controller
                 'active' => true
             ]
         ]);
+        $leader = $team->students()
+            ->wherePivot('member_role', 'leader')
+            ->first();
+
+        $mentor = Mentor::findOrFail($request->mentor_id);
+
+        $user = $mentor->user;
+
+        $emailService->sendMentorAssignedEmail(
+            $leader->user,
+            $team,
+            $mentor
+        );
 
         return response()->json([
             'message' => 'Mentor assigned successfully'

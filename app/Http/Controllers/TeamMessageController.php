@@ -22,7 +22,7 @@ class TeamMessageController extends Controller
         }
         $messages = TeamMessage::with('user')
             ->where('team_id', $teamId)
-            ->latest()
+            ->oldest()
             ->get();
 
         return response()->json([

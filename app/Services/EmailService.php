@@ -38,11 +38,13 @@ class EmailService
         Mail::to($user->email)
             ->queue(new LoginNotificationMail($user));
     }
+
     public function sendPasswordChangedEmail(User $user): void
     {
         Mail::to($user->email)
             ->queue(new PasswordChangedMail($user));
     }
+
     public function sendApplicationSubmittedEmail(
         User $user,
         ProjectApplication $application
@@ -56,6 +58,8 @@ class EmailService
                 )
             );
     }
+
+
     public function sendApplicationStatusChangedEmail(
         User $user,
         ProjectApplication $application,
