@@ -152,10 +152,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/commissions/{commission}/members/{user}', [CommissionController::class, 'removeMember']);
 
         Route::post('/admin/projects/{project}/assign-commission', [ProjectController::class, 'assignCommission']);
-        Route::get(
-            '/projects/{project}/assigned-commission',
-            [ProjectController::class, 'assignedCommission']
-        );
+        Route::get('/projects/{project}/assigned-commission', [ProjectController::class, 'assignedCommission']);
+
+        Route::get('/admin/test', function (Request $request) {
+            return response()->json([
+                'isAdmin' => $request->user()
+                    ->roles()
+                    ->where('name', 'admin')
+                    ->exists()
+            ]);
+        });
 
     });
 

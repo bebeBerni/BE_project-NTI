@@ -4,16 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Commission;
 use App\Models\CommissionMember;
-use App\Models\ProjectApplication;
-<<<<<<< Updated upstream
-use App\Models\ProjectAssignment;
-=======
-<<<<<<< HEAD
 use App\Models\Decision;
-=======
+use App\Models\ProjectApplication;
 use App\Models\ProjectAssignment;
->>>>>>> dee7268a34ff01b53860e0a37c41b8c43d132600
->>>>>>> Stashed changes
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
@@ -23,7 +16,10 @@ class CommissionController extends Controller
 {
     private function isAdmin(Request $request): bool
     {
-        return $request->user() && $request->user()->role === 'admin';
+        return $request->user()
+            ->roles()
+            ->where('name', 'admin')
+            ->exists();
     }
 
     /**
