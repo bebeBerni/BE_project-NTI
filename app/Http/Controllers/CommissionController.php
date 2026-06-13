@@ -319,7 +319,8 @@ class CommissionController extends Controller
             ]);
 
             $application->project->update([
-                'team_id' => $application->team_id
+                'team_id' => $application->team_id,
+                'status' => 'active',
             ]);
 
             ProjectAssignment::create([
