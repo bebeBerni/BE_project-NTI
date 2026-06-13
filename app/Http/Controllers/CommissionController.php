@@ -27,15 +27,17 @@ class CommissionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Commission::with(['decisions', 'members.user']);
+        $query = Commission::with([
+            'decisions',
+            'members.user'
+        ])->where('status', 'active');
 
         if ($request->filled('search')) {
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -80,11 +82,16 @@ class CommissionController extends Controller
      */
     public function show($id)
     {
-        $commission = Commission::with(['decisions', 'members.user'])->find($id);
+        $commission = Commission::with([
+            'decisions',
+            'members.user'
+        ])
+            ->where('status', 'active')
+            ->find($id);
 
         if (!$commission) {
             return response()->json([
-                'message' => 'Commission not found'
+                'message' => 'Active commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
 
