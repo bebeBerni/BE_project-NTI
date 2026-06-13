@@ -5,21 +5,45 @@ namespace App\Http\Controllers;
 use App\Models\Commission;
 use App\Models\CommissionMember;
 use App\Models\ProjectApplication;
+<<<<<<< Updated upstream
 use App\Models\ProjectAssignment;
+=======
+<<<<<<< HEAD
+use App\Models\Decision;
+=======
+use App\Models\ProjectAssignment;
+>>>>>>> dee7268a34ff01b53860e0a37c41b8c43d132600
+>>>>>>> Stashed changes
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
-use App\Models\Decision;
 use Illuminate\Support\Facades\DB;
 
 class CommissionController extends Controller
 {
+    private function isAdmin(Request $request): bool
+    {
+        return $request->user() && $request->user()->role === 'admin';
+    }
+
     /**
      * GET /commissions
      */
-    public function index()
+    public function index(Request $request)
     {
-        $commissions = Commission::with('decisions')->get();
+        $query = Commission::with(['decisions', 'members.user']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        $commissions = $query->get();
 
         return response()->json([
             'commissions' => $commissions
@@ -31,6 +55,12 @@ class CommissionController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:45',
             'description' => 'nullable|string|max:255',
@@ -54,7 +84,7 @@ class CommissionController extends Controller
      */
     public function show($id)
     {
-        $commission = Commission::with('decisions')->find($id);
+        $commission = Commission::with(['decisions', 'members.user'])->find($id);
 
         if (!$commission) {
             return response()->json([
@@ -64,7 +94,7 @@ class CommissionController extends Controller
 
         return response()->json([
             'commission' => $commission
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -72,6 +102,12 @@ class CommissionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $commission = Commission::find($id);
 
         if (!$commission) {
@@ -79,8 +115,6 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
-
-        $this->authorize('update', $commission);
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:45',
@@ -96,15 +130,21 @@ class CommissionController extends Controller
 
         return response()->json([
             'message' => 'Commission updated successfully',
-            'commission' => $commission
-        ]);
+            'commission' => $commission->load(['decisions', 'members.user'])
+        ], Response::HTTP_OK);
     }
 
     /**
      * DELETE /commissions/{id}
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $commission = Commission::find($id);
 
         if (!$commission) {
@@ -113,13 +153,11 @@ class CommissionController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $this->authorize('delete', $commission);
-
         $commission->delete();
 
         return response()->json([
             'message' => 'Commission deleted successfully'
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -137,7 +175,7 @@ class CommissionController extends Controller
 
         return response()->json([
             'members' => $commission->members
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -145,6 +183,12 @@ class CommissionController extends Controller
      */
     public function addMember(Request $request, $id)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $commission = Commission::find($id);
 
         if (!$commission) {
@@ -152,8 +196,6 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
-
-        $this->authorize('update', $commission);
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -176,15 +218,21 @@ class CommissionController extends Controller
 
         return response()->json([
             'message' => 'Member added successfully',
-            'member' => $member
+            'member' => $member->load('user')
         ], Response::HTTP_CREATED);
     }
 
     /**
      * DELETE /commissions/{id}/members/{userId}
      */
-    public function removeMember($commissionId, $userId)
+    public function removeMember(Request $request, $commissionId, $userId)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $commission = Commission::find($commissionId);
 
         if (!$commission) {
@@ -192,8 +240,6 @@ class CommissionController extends Controller
                 'message' => 'Commission not found'
             ], Response::HTTP_NOT_FOUND);
         }
-
-        $this->authorize('update', $commission);
 
         $member = CommissionMember::where('commission_id', $commissionId)
             ->where('user_id', $userId)
@@ -209,7 +255,7 @@ class CommissionController extends Controller
 
         return response()->json([
             'message' => 'Member removed successfully'
-        ]);
+        ], Response::HTTP_OK);
     }
 
     public function applications(Request $request)
@@ -235,8 +281,9 @@ class CommissionController extends Controller
 
         return response()->json([
             'applications' => $applications
-        ]);
+        ], Response::HTTP_OK);
     }
+
     public function approveApplication(Request $request, $id)
     {
         $application = ProjectApplication::with('project')
@@ -260,11 +307,10 @@ class CommissionController extends Controller
         if (!$canDecide) {
             return response()->json([
                 'message' => 'You are not allowed to approve this application.'
-            ], 403);
+            ], Response::HTTP_FORBIDDEN);
         }
 
         DB::transaction(function () use ($application) {
-
             $application->update([
                 'status' => 'approved'
             ]);
@@ -294,8 +340,9 @@ class CommissionController extends Controller
         return response()->json([
             'message' => 'Application approved successfully.',
             'application' => $application
-        ]);
+        ], Response::HTTP_OK);
     }
+
     public function rejectApplication(Request $request, $id)
     {
         $application = ProjectApplication::with('project')
@@ -319,7 +366,7 @@ class CommissionController extends Controller
         if (!$canDecide) {
             return response()->json([
                 'message' => 'You are not allowed to reject this application.'
-            ], 403);
+            ], Response::HTTP_FORBIDDEN);
         }
 
         $application->update([
@@ -329,6 +376,6 @@ class CommissionController extends Controller
         return response()->json([
             'message' => 'Application rejected successfully.',
             'application' => $application
-        ]);
+        ], Response::HTTP_OK);
     }
 }
