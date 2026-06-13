@@ -96,7 +96,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     Route::get('/teams/{team}/messages', [TeamMessageController::class, 'index']);
-
     Route::post('/teams/{team}/messages', [TeamMessageController::class, 'store']);
 
 
@@ -134,12 +133,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/users/{user}', [AdminController::class, 'updateUser']);
         Route::delete('/teams/{team}/mentors/{mentor}', [TeamController::class, 'removeMentor']);
         Route::post('/teams/{team}/assign-mentor', [TeamController::class, 'assignMentor']);
-
-Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
-Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::put('/admin/mentors/{user}', [AdminController::class, 'updateMentor']);
         Route::get('/admin/teams', [AdminController::class, 'teams']);
         Route::get('/admin/projects', [AdminController::class, 'projects']);
         Route::get('/admin/project-assignments', [AdminController::class, 'assignments']);
+        Route::get('/admin/commissions', [CommissionController::class, 'index']);
+        
 
         Route::apiResource('project-assignments', ProjectAssignmentController::class);
         Route::apiResource('students', StudentController::class);
